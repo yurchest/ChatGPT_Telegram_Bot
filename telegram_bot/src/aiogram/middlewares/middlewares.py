@@ -1,0 +1,217 @@
+import asyncio
+
+from aiogram import BaseMiddleware
+from aiogram.types import TelegramObject, Message, InlineKeyboardMarkup, InlineKeyboardButton
+
+from src.database import Database
+from src.gpt import OpenAI_API
+from src.database import Redis
+from src.config import SUBSCRIPTION_DURATION_MONTHS, TRIAL_PERIOD_NUM_REQ
+from src.aiogram.handlers.system import get_payment_keyboard_markup
+
+from src.logger import logger
+
+
+class DatabaseMiddleware(BaseMiddleware):
+    def __init__(self, db: Database):
+        super().__init__()
+        self.db = db
+
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        """
+        Добавляет объект `db` в `data`, чтобы он был доступен в хендлерах.
+        """
+        data["db"] = self.db
+        return await handler(event, data)
+    
+class OpenAIMiddleware(BaseMiddleware):
+    def __init__(self, openai: OpenAI_API):
+        super().__init__()
+        self.openai = openai
+
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        """
+        Добавляет объект `openai` в `data`, чтобы он был доступен в хендлерах.
+        """
+        data["openai"] = self.openai
+        return await handler(event, data)
+    
+class RedisMiddleware(BaseMiddleware):
+    def __init__(self, redis: Redis):
+        super().__init__()
+        self.redis = redis
+
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        """
+        Добавляет объект `redis` в `data`, чтобы он был доступен в хендлерах.
+        """
+        data["redis"] = self.redis
+        return await handler(event, data)
+    
+    
+class CheckNewUserMiddleware(BaseMiddleware):
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        if isinstance(event, Message):
+            # Получаем объект базы данных из контекста
+            db:Database= data.get("db")
+            
+            if db is None:
+                raise ValueError("Database instance must be provided in the context data.")
+            
+            # Проверяем, существует ли пользователь в базе данных
+            user_exists = await db.is_user_exists(event.from_user.id)
+
+            if not user_exists:
+                # Если пользователь новый, отправляем приветственное сообщение
+                await event.answer(
+                    f"Привет, {event.from_user.first_name}! Я рад тебя видеть здесь! "
+                    f"Я - чат-бот, созданный на базе GPT. "
+                    f"Я могу помочь тебе в различных задачах и ответить на любые вопросы. "
+                    f"Просто напиши мне, что ты хочешь узнать! \n "
+                    f"У тебя есть тестовый режим на {TRIAL_PERIOD_NUM_REQ} запросов. Удачи!"
+                )
+
+                # Добавляем нового пользователя в базу данных
+                await db.add_user(
+                    telegram_id=event.from_user.id,
+                    first_name=event.from_user.first_name,
+                    username=event.from_user.username,
+                    language_code=event.from_user.language_code
+                )
+            else:
+                # Вызываем следующий обработчик
+                return await handler(event, data)
+
+class IncrementRequestsMiddleware(BaseMiddleware):
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        result = await handler(event, data)
+        if isinstance(event, Message):
+            # Получаем объект базы данных из контекста
+            db = data.get("db")
+            
+            if db is None:
+                raise ValueError("Database instance must be provided in the context data.")
+            
+            # Увеличиваем счетчик запросов пользователя
+            await db.increment_user_requests(event.from_user.id)
+
+        # Вызываем следующий обработчик
+        return result
+    
+class CheckTrialPeriodMiddleware(BaseMiddleware):
+    """
+    Если пользователь не подписан и тестовый период закончился, отправляет сообщение о подписке.
+    """
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        if isinstance(event, Message):
+            # Получаем объект базы данных из контекста
+            db: Database = data.get("db")
+            
+            if db is None:
+                raise ValueError("Database instance must be provided in the context data.")
+
+            # Проверяем, подписан ли пользователь
+            is_subscription_active = await db.is_subscription_active(event.from_user.id)
+
+            if not is_subscription_active and not await db.is_user_trial(event.from_user.id):
+                # Если пользователь не подписан и тестовый период закончился, отправляем сообщение о подписке
+                await event.answer(
+                    "Ваш пробный период закончился. "
+                    "Для продолжения использования сервиса, пожалуйста, подпишитесь.",
+                    reply_markup=get_payment_keyboard_markup()
+                )
+            else:
+                await handler(event, data)
+        else:
+            await handler(event, data)
+
+class CheckSubscriptionMiddleware(BaseMiddleware):
+    """
+    Если подписан и подписка закончилась, отправляет сообщение о продлении подписки.
+    """
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        if isinstance(event, Message):
+            # Получаем объект базы данных из контекста
+            db: Database = data.get("db")
+            
+            if db is None:
+                raise ValueError("Database instance must be provided in the context data.")
+            
+            # Проверяем, подписан ли пользователь
+            is_subscription_active = await db.is_subscription_active(event.from_user.id)
+
+            if not is_subscription_active and not await db.is_user_trial(event.from_user.id):
+                # Если подписка закончилась И не пробный период, отправляем сообщение о продлении подписки
+        
+                await event.answer(
+                    f"Ваша подписка закончилась. \n"
+                    f"Для продолжения использования сервиса, пожалуйста, продлите подписку",
+                    reply_markup=get_payment_keyboard_markup()
+                )
+                # TODO: Добавить кнопку для продления подписки
+            else:
+                await handler(event, data)
+        else:
+            await handler(event, data)
+
+    
+class WaitingMiddleware(BaseMiddleware):
+    """
+    Если предыдущий запрос пользователя еще обрабатывается, отправляет техническое сообщение об этом.
+    Иначе выводим техническое сообщение - точки.
+    В процессе запроса присваиваем активность (Redis).
+    После выполнения технические сообщения удаляются.
+    """
+    async def delete_message_when_inactive(self, redis: Redis, 
+                                           user_id: int, 
+                                           tech_message: TelegramObject, 
+                                           user_message: TelegramObject = None):
+        """
+        Ожидает, пока пользователь ждет ответа.
+        """
+        while await redis.is_user_waiting(user_id):
+            await asyncio.sleep(0.1)
+
+        await tech_message.delete()
+        if user_message: await user_message.delete()
+        
+
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        # Получаем объект базы данных из контекста
+        redis: Redis = data.get("redis")
+
+        if redis is None:
+            raise ValueError("Redis instance must be provided in the context data.")
+
+        # Проверяем, активен ли запрос пользователя
+        is_user_waiting = await redis.is_user_waiting(event.from_user.id)
+
+        tech_message = None  # Для хранения ссылки на отправленное сообщение
+
+        
+        if is_user_waiting:
+            # Если запрос пользователя активен, отправляем сообщение о том, что запрос обрабатывается
+            tech_message = await event.answer("Ваш запрос обрабатывается. Пожалуйста, подождите.")
+            asyncio.create_task(self.delete_message_when_inactive(redis, event.from_user.id, tech_message, event))
+            return  # Завершаем выполнение, так как запрос уже обрабатывается
+        else:
+            # Отправляем техническое сообщение с точками
+            tech_message = await event.answer(". . . . . .")
+            # Устанавливаем флаг активности запроса пользователя
+            await redis.set_user_req_active(event.from_user.id)
+            # Ожидаем когда запрос станет неактивным
+            asyncio.create_task(self.delete_message_when_inactive(redis, event.from_user.id, tech_message))
+            # Вызываем следующий обработчик
+            result = await handler(event, data)
+            # Удаляем флаг активности запроса пользователя
+            await redis.set_user_req_inactive(event.from_user.id)
+            return result
+
+            
+
+
+
+    
+
+        
+
