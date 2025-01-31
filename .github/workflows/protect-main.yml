@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Ensure changes are made via Pull Request
         run: |
-          if [[ $GITHUB_EVENT_NAME != "pull_request" ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_HEAD_REF" == "" ]]; then
             echo "Direct push to the main branch is not allowed. Please use a Pull Request."
             exit 1
           fi
