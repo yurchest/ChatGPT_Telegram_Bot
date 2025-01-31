@@ -14,6 +14,7 @@ The ChatGpt Telegram Bot is an advanced conversational agent built using the GPT
 4. **Redis Caching**: Redis is used to store message history and manage request states, ensuring quick and efficient data retrieval.
 5. **Dockerized Deployment**: The entire application is containerized using Docker, making it easy to deploy and manage across different environments.
 6. **Continuous Integration/Continuous Deployment (CI/CD)**: GitHub Actions are used to automate the deployment process, ensuring that updates are seamlessly integrated and deployed.
+7. **Monitoring and Metrics**: Integration with Prometheus and Grafana for monitoring bot performance and metrics.
 
 ### Technologies Used
 
@@ -27,6 +28,8 @@ The ChatGpt Telegram Bot is an advanced conversational agent built using the GPT
 - **Docker Compose**: A tool for managing multi-container Docker applications, simplifying the orchestration of the bot, database, and caching services.
 - **GitHub Actions**: CI/CD for automatic deployment of the application, ensuring that updates are tested and deployed seamlessly.
 - **pytest**: A framework for testing, ensuring the reliability and correctness of the codebase.
+- **Prometheus**: Used for collecting and storing metrics, providing insights into the bot's performance.
+- **Grafana**: A visualization tool for displaying metrics collected by Prometheus, enabling easy monitoring and analysis.
 
 ### Benefits of the Project
 
@@ -35,6 +38,7 @@ The ChatGpt Telegram Bot is an advanced conversational agent built using the GPT
 3. **Reliability**: The integration of PostgreSQL and Redis ensures that user data is stored securely and can be accessed quickly.
 4. **Ease of Deployment**: The use of Docker and GitHub Actions simplifies the deployment process, making it easy to deploy updates and manage the application.
 5. **Extensibility**: The modular design of the bot and the use of Aiogram make it easy to add new features and extend the functionality of the bot.
+6. **Monitoring and Insights**: The integration with Prometheus and Grafana provides detailed insights into the bot's performance and usage.
 
 By leveraging these technologies, the ChatGpt Telegram Bot provides a powerful and flexible solution for interacting with users, managing subscriptions, and handling payments. This project demonstrates the potential of combining advanced natural language processing with robust backend technologies to create a seamless and engaging user experience.
 

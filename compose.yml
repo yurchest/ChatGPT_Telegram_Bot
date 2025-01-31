@@ -106,12 +106,48 @@ services:
     networks:
       - app_network
 
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    # hostname: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus  # Хранилище данных Prometheus
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    restart: always
+    networks:
+      - app_network
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    volumes:
+      - grafana_data:/var/lib/grafana  # Хранилище данных Grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    networks:
+      - app_network
+    restart: always
+    
 
 volumes:
   postgres-data:
   pgadmin-data:
   redis-data:
-
+  prometheus_data:
+  grafana_data:
 
 networks:
   app_network:

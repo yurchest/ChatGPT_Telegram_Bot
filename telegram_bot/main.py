@@ -16,6 +16,7 @@ from aiogram import Bot, Dispatcher
 import asyncio
 from functools import partial
 
+from prometheus_client import start_http_server, Summary
 
 @init_error_handler
 async def main() -> None:
@@ -56,6 +57,9 @@ async def main() -> None:
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
+    # Start up the server to expose the metrics.
+    start_http_server(8000)
+
     asyncio.run(main())
 
 
