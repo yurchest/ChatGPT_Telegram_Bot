@@ -148,8 +148,6 @@ volumes:
   redis-data:
   prometheus_data:
   grafana_data:
-  prometheus_data:
-  grafana_data:
 
 networks:
   app_network:

@@ -5,10 +5,6 @@ on:
     branches:
       - main
   # workflow_dispatch:  # Запуск вручную из GitHub Actions
-  push:
-    branches:
-      - main
-  # workflow_dispatch:  # Запуск вручную из GitHub Actions
 
 jobs:
   deploy:
