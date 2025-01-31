@@ -72,8 +72,8 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_USER=${REDIS_USER}
       - REDIS_USER_PASSWORD=${REDIS_USER_PASSWORD}
-    ports:
-      - "6380:6379"
+    # ports: # Не нужно прокидывать порт наружу контейнера
+    #   - "6380:6379" 
     volumes:
       - redis-data:/var/lib/redis/data
     deploy:
@@ -118,7 +118,7 @@ services:
         limits:
           cpus: '0.50'
           memory: 512M
-    restart: always
+    restart: unless-stopped
     networks:
       - app_network
 
@@ -126,7 +126,8 @@ services:
     image: grafana/grafana:11.5.0
     container_name: grafana
     volumes:
-      - grafana_data:/var/lib/grafana  # Хранилище данных Grafana
+      - ./grafana/dashboards:/var/lib/grafana/dashboards # Монтируем папку с дашбордами
+      - ./grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/main.yaml  # Монтируем provisioning
     ports:
       - "3000:3000"
     environment:
@@ -139,7 +140,7 @@ services:
           memory: 512M
     networks:
       - app_network
-    restart: always
+    restart: unless-stopped
     
 
 volumes:

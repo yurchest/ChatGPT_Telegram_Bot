@@ -30,6 +30,5 @@ jobs:
             git pull origin main
             docker compose down
             docker compose up --build -d --remove-orphans
-            docker compose up --build -d --remove-orphans
             docker image prune -f
             docker volume prune -f
