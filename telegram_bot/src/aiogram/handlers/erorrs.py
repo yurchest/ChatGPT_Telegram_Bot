@@ -8,6 +8,7 @@ from src.database import Redis, Database
 import sys
 import traceback
 
+
 router = Router()
 
 @router.error(F.update.message.as_("message"))
