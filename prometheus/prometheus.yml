@@ -1,0 +1,12 @@
+global:
+   # Каждые 5 секунд опрос метрик. Если в течение 10с у него не получится их собрать, то будет прерывание по таймауту
+  scrape_interval: 5s
+  scrape_timeout: 3s
+
+
+scrape_configs:
+  # имя сборщика
+  - job_name: 'aiogram_bot'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['aiogram-bot:8000']

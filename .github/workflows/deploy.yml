@@ -1,10 +1,10 @@
 name: Deploy to Server
 
 on:
-  # push:
-  #   branches:
-  #     - main
-  workflow_dispatch:  # Запуск вручную из GitHub Actions
+  push:
+    branches:
+      - main
+  # workflow_dispatch:  # Запуск вручную из GitHub Actions
 
 jobs:
   deploy:
@@ -21,10 +21,15 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
+          # --build (it is forced to build the images even when not needed)
+          # --remove-orphans (удалить все контейнеры, которые не находятся в конфигурации `compose. yml`)
+          # --build (it is forced to build the images even when not needed)
+          # --remove-orphans (удалить все контейнеры, которые не находятся в конфигурации `compose. yml`)
           script: |
             cd /root/ChatGPT_Telegram_Bot
             git pull origin main
             docker compose down
-            docker compose build
-            docker compose up -d
+            docker compose up --build -d --remove-orphans
+            docker compose up --build -d --remove-orphans
             docker image prune -f
+            docker volume prune -f
