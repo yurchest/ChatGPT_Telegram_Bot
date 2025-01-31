@@ -128,6 +128,7 @@ services:
     volumes:
       - ./grafana/dashboards:/var/lib/grafana/dashboards # Монтируем папку с дашбордами
       - ./grafana/dashboards.yaml:/etc/grafana/provisioning/dashboards/main.yaml  # Монтируем provisioning
+      - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
     ports:
       - "3000:3000"
     environment:

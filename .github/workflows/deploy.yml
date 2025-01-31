@@ -14,21 +14,55 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Deploy via SSH
+      - name: Pull latest changes
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          # --build (it is forced to build the images even when not needed)
-          # --remove-orphans (удалить все контейнеры, которые не находятся в конфигурации `compose. yml`)
-          # --build (it is forced to build the images even when not needed)
-          # --remove-orphans (удалить все контейнеры, которые не находятся в конфигурации `compose. yml`)
           script: |
             cd /root/ChatGPT_Telegram_Bot
             git pull origin main
+
+      - name: Stop running containers
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /root/ChatGPT_Telegram_Bot
             docker compose down
+
+      - name: Start containers with build
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /root/ChatGPT_Telegram_Bot
             docker compose up --build -d --remove-orphans
+
+      - name: Prune unused images
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
             docker image prune -f
+
+      - name: Prune unused volumes
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
             docker volume prune -f
