@@ -4,24 +4,21 @@ on:
   push:
     branches:
       - main
-    # Исключаем пуши от PR
-    # Сработает только если это прямой push, а не из PR
-    # Мы можем проверить, чтобы это был не merge
     paths-ignore:
-      - "*.md"  # Игнорирует изменения во всех Markdown файлах (например, README.md, CONTRIBUTING.md и т.д.)
+      - "*.md"
       - ".github/**"
       - "*.gitignore"
   pull_request:
     branches:
       - main
-    # Разрешаем пуши через PR
-    # Не срабатывает, если PR сливается в main
 
 jobs:
-  prevent-direct-push:
+  check-pull-request:
     runs-on: ubuntu-latest
     steps:
-      - name: Prevent direct push to main
+      - name: Ensure changes are made via Pull Request
         run: |
-          echo "Pushing directly to main is not allowed. Please use a Pull Request."
-          exit 1
+          if [[ $GITHUB_EVENT_NAME != "pull_request" ]]; then
+            echo "Direct push to the main branch is not allowed. Please use a Pull Request."
+            exit 1
+          fi
