@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "*.md"  # Игнорирует изменения во всех Markdown файлах (например, README.md, CONTRIBUTING.md и т.д.)
+      - ".github/**"
+      - "*.gitignore"
   # workflow_dispatch:  # Запуск вручную из GitHub Actions
 
 jobs:

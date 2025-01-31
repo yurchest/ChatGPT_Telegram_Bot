@@ -4,6 +4,18 @@ on:
   push:
     branches:
       - main
+    # Исключаем пуши от PR
+    # Сработает только если это прямой push, а не из PR
+    # Мы можем проверить, чтобы это был не merge
+    paths-ignore:
+      - "*.md"  # Игнорирует изменения во всех Markdown файлах (например, README.md, CONTRIBUTING.md и т.д.)
+      - ".github/**"
+      - "*.gitignore"
+  pull_request:
+    branches:
+      - main
+    # Разрешаем пуши через PR
+    # Не срабатывает, если PR сливается в main
 
 jobs:
   prevent-direct-push:
