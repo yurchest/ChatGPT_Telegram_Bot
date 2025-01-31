@@ -25,16 +25,6 @@ jobs:
             cd /root/ChatGPT_Telegram_Bot
             git pull origin main
 
-      - name: Stop running containers
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd /root/ChatGPT_Telegram_Bot
-            docker compose down
 
       - name: Start containers with build
         uses: appleboy/ssh-action@v1.2.0
@@ -45,9 +35,11 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd /root/ChatGPT_Telegram_Bot
-            docker compose up --build -d --remove-orphans
+            docker compose pull  # Загружает новые образы (если они есть)
+            docker compose up --build -d  # Пересобирает и запускает контейнеры без остановки
 
-      - name: Prune unused images
+
+      - name: Prune unused images and volumes
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -56,13 +48,4 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             docker image prune -f
-
-      - name: Prune unused volumes
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            docker volume prune -f
+            docker volume prune -f 
