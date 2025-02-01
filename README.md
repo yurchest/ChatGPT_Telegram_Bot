@@ -329,6 +329,22 @@ Now, when you run `git pull`, it will use the SSH key for authentication, and yo
      ```
      Ensure the script has write permissions to work correctly.
 
+  2. Placed in `.git/hooks/pre-commit`
+  
+      Prevents local commits to the `main` branch
+      ```bash     
+        #!/bin/bash
+
+        # Получаем текущую ветку
+        branch=$(git rev-parse --abbrev-ref HEAD)
+
+        # Проверка на ветку main
+        if [ "$branch" = "main" ]; then
+          echo "You cannot commit directly to the main branch. Please use a Pull Request!"
+          exit 1
+        fi
+      ```
+
 </details>
 
 
