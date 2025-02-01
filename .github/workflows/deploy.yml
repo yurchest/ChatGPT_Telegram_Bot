@@ -17,6 +17,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Pull latest changes
         uses: appleboy/ssh-action@v1.2.0
@@ -38,7 +44,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd /root/ChatGPT_Telegram_Bot
-            docker compose up --build -d  # Пересобирает и запускает контейнеры без остановки
+            docker compose pull
 
       - name: Start containers with build
         uses: appleboy/ssh-action@v1.2.0
@@ -60,4 +66,12 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             docker image prune -f
-            docker volume prune -f 
+            docker volume prune -f
+            
+      # Шаг отката изменений в случае неудачного деплоя
+      - name: Revert commit if deploy failed
+        if: failure()
+        run: |
+          git checkout main
+          git revert --no-edit HEAD  # Откатывает последний коммит
+          git push origin main  # Пушим изменения обратно в main
