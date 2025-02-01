@@ -19,7 +19,6 @@ from functools import partial
 
 from prometheus_client import start_http_server, Summary
 
-
 @init_error_handler
 async def main() -> None:
     # db = Database("./database.db") # sqlite3
