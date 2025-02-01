@@ -65,7 +65,7 @@ jobs:
             cd /root/ChatGPT_Telegram_Bot
             docker compose pull
 
-      - name: Start containers with build
+      - name: Containers Build
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -74,7 +74,18 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd /root/ChatGPT_Telegram_Bot
-            docker compose up --build -d  # Пересобирает и запускает контейнеры без остановки
+            docker compose build  # Пересобирает контейнеры
+
+      - name: Containers up
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /root/ChatGPT_Telegram_Bot
+            docker compose up -d  # Запускает контейнеры без остановки
 
       - name: Prune unused images and volumes
         uses: appleboy/ssh-action@v1.2.0
@@ -108,9 +119,21 @@ jobs:
         if: failure()
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Подключаем токен
-        run: |
-          git checkout main
-          git revert --no-edit HEAD  # Откатывает последний коммит
-          # Пушим изменения обратно в main
-          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /root/ChatGPT_Telegram_Bot
+            git checkout main
+            git revert --no-edit HEAD  # Откатывает последний коммит
+            # Пушим изменения обратно в main
+            git push origin main
+        # run: |
+        #   git checkout main
+        #   git revert --no-edit HEAD  # Откатывает последний коммит
+        #   # Пушим изменения обратно в main
+        #   git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
   
