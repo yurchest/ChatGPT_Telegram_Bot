@@ -29,7 +29,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 5G # Лимит на память 
+          memory: 1G # Лимит на память 
           cpus: "0.8"  # Лимит на использование CPU 
     command: >
       postgres -c timezone='Europe/Moscow'
@@ -59,8 +59,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.5'
-          memory: 1G
+          cpus: '0.4'
+          memory: 512M
     networks:
       - app_network
 
@@ -79,7 +79,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.50'
+          cpus: '0.2'
           memory: 512M
         reservations:
           cpus: '0.25'
@@ -116,8 +116,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.50'
-          memory: 512M
+          cpus: '0.2'
+          memory: 256M
     restart: unless-stopped
     networks:
       - app_network
@@ -137,8 +137,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.50'
-          memory: 512M
+          cpus: '0.30'
+          memory: 256M
     networks:
       - app_network
     restart: unless-stopped

@@ -28,7 +28,17 @@ jobs:
           script: |
             cd /root/ChatGPT_Telegram_Bot
             git pull origin main
-
+      
+      - name: Docker Compose Pull
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /root/ChatGPT_Telegram_Bot
+            docker compose up --build -d  # Пересобирает и запускает контейнеры без остановки
 
       - name: Start containers with build
         uses: appleboy/ssh-action@v1.2.0
@@ -39,9 +49,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd /root/ChatGPT_Telegram_Bot
-            docker compose pull  # Загружает новые образы (если они есть)
             docker compose up --build -d  # Пересобирает и запускает контейнеры без остановки
-
 
       - name: Prune unused images and volumes
         uses: appleboy/ssh-action@v1.2.0
