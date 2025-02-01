@@ -29,7 +29,8 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "github-actions@github.com"
 
-      - name: Pull latest changes
+
+      - name: Pull Repo
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -39,6 +40,16 @@ jobs:
           script: |
             cd /root/ChatGPT_Telegram_Bot
             git pull origin main
+
+      - name: Backup current images before deployment
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            docker compose images > /root/backup_images.txt
       
       - name: Docker Compose Pull
         uses: appleboy/ssh-action@v1.2.0
@@ -72,6 +83,22 @@ jobs:
           script: |
             docker image prune -f
             docker volume prune -f
+            
+      # Откат контейнеров, если деплой провалился
+      - name: Rollback on failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            echo "Rolling back to previous version..."
+            cd /root/ChatGPT_Telegram_Bot
+            docker compose down
+            docker compose pull $(cat /root/backup_images.txt | awk '{print $2}')
+            docker compose up -d
             
       # Шаг отката изменений в случае неудачного деплоя
       - name: Revert commit if deploy failed
