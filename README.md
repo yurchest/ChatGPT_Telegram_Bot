@@ -307,3 +307,30 @@ To perform `git pull` without entering a username and password, you can set up a
 
 Now, when you run `git pull`, it will use the SSH key for authentication, and you won’t need to enter your username and password.
 
+
+
+<details><summary>
+
+## Local GitHub Hooks
+
+</summary>
+<br>
+
+  1. Placed in `.git/hooks/pre-push`
+
+     Prevents local pushes to the `main` branch:
+     ```bash
+     #!/bin/bash
+     branch=$(git rev-parse --abbrev-ref HEAD)
+     if [ "$branch" = "main" ]; then
+       echo "You cannot push directly to main. Use a Pull Request!"
+       exit 1
+     fi 
+     ```
+     Ensure the script has write permissions to work correctly.
+
+</details>
+
+
+
+
