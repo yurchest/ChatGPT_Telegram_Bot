@@ -13,6 +13,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Разрешаем запись в репозиторий
 
     steps:
       - name: Checkout repository
@@ -49,6 +51,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            cd /root/ChatGPT_Telegram_Bot
             docker compose images > /root/backup_images.txt
       
       - name: Docker Compose Pull
@@ -103,7 +106,11 @@ jobs:
       # Шаг отката изменений в случае неудачного деплоя
       - name: Revert commit if deploy failed
         if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Подключаем токен
         run: |
           git checkout main
           git revert --no-edit HEAD  # Откатывает последний коммит
-          git push origin main  # Пушим изменения обратно в main
+          # Пушим изменения обратно в main
+          git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
+  
