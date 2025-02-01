@@ -11,13 +11,18 @@ on:
   # workflow_dispatch:  # Запуск вручную из GitHub Actions
 
 jobs:
-  deploy:
+  checkout:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+  pull_changes:
+    runs-on: ubuntu-latest
+    needs: checkout
+
+    steps:
       - name: Pull latest changes
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -29,8 +34,12 @@ jobs:
             cd /root/ChatGPT_Telegram_Bot
             git pull origin main
 
+  pull_images:
+    runs-on: ubuntu-latest
+    needs: pull_changes
 
-      - name: Start containers with build
+    steps:
+      - name: Pull Docker images
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -40,9 +49,28 @@ jobs:
           script: |
             cd /root/ChatGPT_Telegram_Bot
             docker compose pull  # Загружает новые образы (если они есть)
+
+  start_containers:
+    runs-on: ubuntu-latest
+    needs: pull_images
+
+    steps:
+      - name: Start containers with build
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /root/ChatGPT_Telegram_Bot
             docker compose up --build -d  # Пересобирает и запускает контейнеры без остановки
 
+  prune_resources:
+    runs-on: ubuntu-latest
+    needs: start_containers
 
+    steps:
       - name: Prune unused images and volumes
         uses: appleboy/ssh-action@v1.2.0
         with:
