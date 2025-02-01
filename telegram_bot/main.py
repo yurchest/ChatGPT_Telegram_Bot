@@ -25,10 +25,10 @@ async def main() -> None:
     db = Database(POSTRGRES_URL) # PostgreSQL
     db_middleware = DatabaseMiddleware(db)
 
-    openai = OpenAI_API()
+    openai = await OpenAI_API.create()
     openai_middleware = OpenAIMiddleware(openai)
 
-    redis = Redis(REDIS_HOST, REDIS_PORT)
+    redis = await Redis.create(REDIS_HOST, REDIS_PORT)
     redis_middleware = RedisMiddleware(redis)
 
     bot = Bot(token=TELEGRAM_BOT_TOKEN)
@@ -42,7 +42,7 @@ async def main() -> None:
     
     # Регистрация lifecycle-событий
     dp.startup.register(partial(on_startup, db))
-    dp.shutdown.register(partial(on_shutdown, db, redis))
+    dp.shutdown.register(partial(on_shutdown, db, redis, openai))
 
     # dp.update.middleware(ErrorLoggingMiddleware(
     #     bot=bot,
@@ -57,10 +57,13 @@ async def main() -> None:
     dp.errors.middleware(db_middleware)
     
     
-    logger.info("(MAIN)\t\t Bot has started successfully")
-    
     await bot(DeleteWebhook(drop_pending_updates=True))
+
+    logger.info("(MAIN)\t\t Bot has started successfully")
+
     await dp.start_polling(bot)
+
+
 
 if __name__ == "__main__":
     # Start up the server to expose the metrics.

@@ -20,7 +20,6 @@ async def on_shutdown(db: Database, redis: Redis):
 
     await redis.close()
     await db.close()
-    
 
 
 def init_error_handler(func):
