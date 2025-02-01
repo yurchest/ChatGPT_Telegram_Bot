@@ -26,14 +26,20 @@ check_env_var "$VPS_USER" "VPS_USER"
 # Установим флаг для завершения при любой ошибке
 set -e
 
-# Меняем ENVIRONMENT=dev на ENVIRONMENT=prod
-sed -i 's/^ENVIRONMENT=dev$/ENVIRONMENT=prod/' .env
+# Создаем временную копию .env
+cp .env .env.temp
 
-# Копируем .env файл на сервер
-scp -P $VPS_SSH_PORT .env $VPS_USER@$VPS_SERVER_IP:ChatGPT_Telegram_Bot/.env
+# Меняем ENVIRONMENT=dev на ENVIRONMENT=prod только в временном файле
+sed -i 's/^ENVIRONMENT=dev$/ENVIRONMENT=prod/' .env.temp
+
+# Копируем временный .env файл на сервер
+scp -P $VPS_SSH_PORT .env.temp $VPS_USER@$VPS_SERVER_IP:ChatGPT_Telegram_Bot/.env
 if [ $? -ne 0 ]; then
     echo "Ошибка при копировании .env файла на сервер"
     exit 1
 fi
+
+# Удаляем временный файл
+rm .env.temp
 
 echo ".env файл успешно скопирован на сервер"

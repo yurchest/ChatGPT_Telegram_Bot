@@ -24,8 +24,8 @@ services:
       TZ: Europe/Moscow # Устанавливаем часовой пояс на уровне контейнера
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5431:5432"
+    # ports:
+    #   - "5431:5432"
     deploy:
       resources:
         limits:
@@ -119,6 +119,8 @@ services:
           cpus: '0.2'
           memory: 256M
     restart: unless-stopped
+    depends_on:
+      - bot
     networks:
       - app_network
 
@@ -139,6 +141,8 @@ services:
         limits:
           cpus: '0.30'
           memory: 256M
+    depends_on:
+      - bot
     networks:
       - app_network
     restart: unless-stopped
