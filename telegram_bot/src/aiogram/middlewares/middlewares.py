@@ -1,7 +1,12 @@
 import asyncio
+import traceback
 
-from aiogram import BaseMiddleware
-from aiogram.types import TelegramObject, Message, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram import BaseMiddleware, Bot
+from aiogram.types import (
+    Update,
+    TelegramObject,
+    Message,
+    )
 
 from src.database import Database
 from src.gpt import OpenAI_API
@@ -10,6 +15,57 @@ from src.config import SUBSCRIPTION_DURATION_MONTHS, TRIAL_PERIOD_NUM_REQ
 from src.aiogram.handlers.system import get_payment_keyboard_markup
 
 from src.logger import logger
+
+class ErrorLoggingMiddleware(BaseMiddleware):
+    def __init__(self, bot: Bot, db: Database, redis: Redis):
+        self.bot = bot
+        self.db = db
+        self.redis = redis
+
+    async def __call__(self, handler, event: Update, data: dict):
+        try:
+            # Выполняем основной обработчик
+            return await handler(event, data)
+        except Exception as exception:
+            # Получаем информацию о пользователе
+            telegram_id = None
+            if event.message:
+                telegram_id = event.message.from_user.id
+            elif event.callback_query:
+                telegram_id = event.callback_query.from_user.id
+
+            # Получаем информацию об ошибке
+            tb = traceback.extract_tb(exception.__traceback__)
+            filepath, lineno, func_name, line = tb[-1]
+
+            # Логируем ошибку
+            logger.error(
+                f"Global error occurred\n{filepath}\nFunc name: {func_name}\n{exception.__class__.__name__} | {exception}",
+                exc_info=False
+            )
+
+            # Логируем ошибку в базу данных
+            await self.db.add_error(
+                error_type=str(exception.__class__.__name__),
+                error_text=str(exception),
+                file_path=filepath,
+                telegram_id=telegram_id,
+                traceback=traceback.format_exc()
+            )
+
+            # Удаляем историю сессии из Redis
+            if telegram_id:
+                await self.redis.clear_user_history(telegram_id)
+                await self.redis.set_user_req_inactive(telegram_id)
+
+                # Уведомляем пользователя
+                await self.bot.send_message(
+                    chat_id=telegram_id,
+                    text=f"Произошла непредвиденная ошибка\nСвяжитесь с разработчиком (@yurchest)\nError: {exception}"
+                )
+
+            # Не блокируем выполнение
+            # raise exception
 
 
 class DatabaseMiddleware(BaseMiddleware):

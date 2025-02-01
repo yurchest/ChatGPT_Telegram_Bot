@@ -3,12 +3,13 @@ from src.database import Database, Redis
 from src.gpt import OpenAI_API
 from src.logger import logger
 from src.aiogram.middlewares.middlewares import (
+    ErrorLoggingMiddleware,
     DatabaseMiddleware, 
     OpenAIMiddleware, 
     RedisMiddleware 
     )
 from src.aiogram.handlers.system import on_startup, on_shutdown, init_error_handler
-from src.aiogram.handlers import messages, commands, erorrs, payment
+from src.aiogram.handlers import messages, commands, errors, payment
 
 from aiogram.methods import DeleteWebhook
 from aiogram import Bot, Dispatcher
@@ -37,13 +38,18 @@ async def main() -> None:
         payment.router,
         commands.router,
         messages.router, 
-        erorrs.router,
+        errors.router,  
         )
     
     # Регистрация lifecycle-событий
     dp.startup.register(partial(on_startup, db))
     dp.shutdown.register(partial(on_shutdown, db, redis))
 
+    # dp.update.middleware(ErrorLoggingMiddleware(
+    #     bot=bot,
+    #     db=db,
+    #     redis=redis
+    # ))
     dp.update.middleware(db_middleware)
     dp.update.middleware(redis_middleware)
     dp.update.middleware(openai_middleware)
