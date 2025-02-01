@@ -38,7 +38,7 @@ router.message.middleware(IncrementRequestsMiddleware())
 async def message_handler(message: Message, db : Database, openai: OpenAI_API, redis: Redis) -> None:
     history = await redis.get_history(message.from_user.id)
 
-    # raise ValueError("Test error")
+    # raise ValueError("Message handle Test error")
 
     user_message = {'role': 'user', 'content': message.text}
     assistant_reply, role, num_in_tokens, num_out_tokens = await openai.get_response(history, user_message)
