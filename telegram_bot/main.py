@@ -5,7 +5,7 @@ from src.logger import logger
 from src.aiogram.middlewares.middlewares import (
     DatabaseMiddleware, 
     OpenAIMiddleware, 
-    RedisMiddleware, 
+    RedisMiddleware 
     )
 from src.aiogram.handlers.system import on_startup, on_shutdown, init_error_handler
 from src.aiogram.handlers import messages, commands, erorrs, payment
