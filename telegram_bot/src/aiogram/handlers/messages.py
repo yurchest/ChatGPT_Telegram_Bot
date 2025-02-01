@@ -19,7 +19,6 @@ from src.database import Redis
 
 from src.prometheus_metrics import handler_duration, count_messages
 
-
 router = Router()
 
 # Inner Middlwares
