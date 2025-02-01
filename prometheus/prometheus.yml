@@ -1,7 +1,7 @@
 global:
    # Каждые 5 секунд опрос метрик. Если в течение 10с у него не получится их собрать, то будет прерывание по таймауту
-  scrape_interval: 5s
-  scrape_timeout: 3s
+  scrape_interval: 30s
+  scrape_timeout: 15s
 
 
 scrape_configs:
