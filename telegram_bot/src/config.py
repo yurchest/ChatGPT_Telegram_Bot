@@ -11,7 +11,6 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-
 # Выбираем API ключ в зависимости от среды
 if ENVIRONMENT == "prod":
     TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN_PROD")
@@ -19,7 +18,6 @@ if ENVIRONMENT == "prod":
 else:
     TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN_DEV")
     YOOKASSA_PAYMENT_TOKEN = os.getenv("YOOKASSA_PAYMENT_TOKEN_TEST")
-
 
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
