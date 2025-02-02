@@ -17,7 +17,6 @@ async def global_error_handler(event: ErrorEvent, bot: Bot, redis: Redis, db: Da
     Выводим ошибку в лог (Postgre) 
     Отправляем пользователю сообщение о том, что произошла ошибка.
     """
-    print("dfs")
 
     update: Update = event.update
     exception: Exception = event.exception
@@ -33,7 +32,12 @@ async def global_error_handler(event: ErrorEvent, bot: Bot, redis: Redis, db: Da
         
     filepath, lineno, func_name, line = tb[-1] 
     logger.error(
-        f"Global error occurred\n{filepath}\nFunc name: {func_name}\n{exception.__class__.__name__} | {exception}", 
+        msg=(
+            f"Global error occurred\n"
+            f"{filepath}\nFunc name:]\t{func_name}\n"
+            f"{(lineno)}\t{line}\n"
+            f"{(exception.__class__.__name__)}\t{exception}"
+        ), 
         exc_info=False
         )
 

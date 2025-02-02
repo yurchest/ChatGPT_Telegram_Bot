@@ -20,7 +20,6 @@ async def on_shutdown(db: Database, redis: Redis):
 
     await redis.close()
     await db.close()
-    
 
 
 def init_error_handler(func):
@@ -29,9 +28,8 @@ def init_error_handler(func):
         try:
             return await func(*args, **kwargs)
         except Exception as e:
-            logger.critical(f"Global error occurred in {func.__name__}: {e}", exc_info=False) # True
+            logger.critical(f"Errot init bot in {func.__name__}: {e.__class__.__name__} | {e}", exc_info=False) # True
             sys.exit(1)
-            return None 
     return wrapper
 
 def get_payment_keyboard_markup():

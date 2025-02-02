@@ -16,7 +16,13 @@ def handle_redis_errors(func):
 class Redis:
     def __init__(self, redis_host, redis_port):
         self.redis = aioredis.from_url(f"redis://{redis_host}:{redis_port}", db=0,decode_responses=True)
-        asyncio.create_task(self.check_connection())
+        self.check_task = asyncio.create_task(self.check_connection())
+
+    @classmethod
+    async def create(cls, redis_host, redis_port):
+        self = cls(redis_host, redis_port)
+        await self.check_task  # Дожидаемся завершения задачи
+        return self
 
     async def check_connection(self):
         try:

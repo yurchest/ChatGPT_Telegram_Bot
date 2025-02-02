@@ -131,9 +131,3 @@ jobs:
             git revert --no-edit HEAD  # Откатывает последний коммит
             # Пушим изменения обратно в main
             git push origin main
-        # run: |
-        #   git checkout main
-        #   git revert --no-edit HEAD  # Откатывает последний коммит
-        #   # Пушим изменения обратно в main
-        #   git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main
-  

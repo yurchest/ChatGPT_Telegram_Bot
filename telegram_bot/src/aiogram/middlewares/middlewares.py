@@ -7,6 +7,7 @@ from aiogram.types import (
     TelegramObject,
     Message,
     )
+from aiogram.enums import ParseMode
 
 from src.database import Database
 from src.gpt import OpenAI_API
@@ -113,19 +114,30 @@ class CheckNewUserMiddleware(BaseMiddleware):
             
             if db is None:
                 raise ValueError("Database instance must be provided in the context data.")
-            
+        
             # Проверяем, существует ли пользователь в базе данных
-            user_exists = await db.is_user_exists(event.from_user.id)
+            is_user_exists = await db.is_user_exists(event.from_user.id)
 
-            if not user_exists:
+            if not is_user_exists:
                 # Если пользователь новый, отправляем приветственное сообщение
-                await event.answer(
-                    f"Привет, {event.from_user.first_name}! Я рад тебя видеть здесь! "
-                    f"Я - чат-бот, созданный на базе GPT. "
-                    f"Я могу помочь тебе в различных задачах и ответить на любые вопросы. "
-                    f"Просто напиши мне, что ты хочешь узнать! \n "
-                    f"У тебя есть тестовый режим на {TRIAL_PERIOD_NUM_REQ} запросов. Удачи!"
-                )
+                text = (
+                    f"*Привет, {event.from_user.first_name}\\! 👋* \n\n"
+                    "Я \\- *Yurchest ChatGPT Bot*, умный чат\\-бот на базе OpenAI GPT\\. "
+                    "Готов помочь тебе с любыми вопросами: от написания текста до программирования\\!\n\n"
+                    "🔹 *Как я могу помочь?* \n"
+                    "Просто напиши свой запрос, и я постараюсь дать лучший ответ\\!\n"
+                    "🔹 *Пробный период*\n"
+                    f"Ты можешь бесплатно воспользоваться ботом в течение *{TRIAL_PERIOD_NUM_REQ} запросов*\\. \n"
+                    f"По истечении пробного периода тебе будет предложено оплатить подписку на *{SUBSCRIPTION_DURATION_MONTHS} месяц\\(ев\\)*\n"
+                    "🔹 *Основные команды:* \n"    
+                    "    ⦁ */reset\\_conversation* \\- Сбросить диалог \n"
+                    "    ⦁ */pay* \\- Оплатить подписку \n"
+                    "    ⦁ */show\\_dialog* \\- Показать весь диалог \n"
+                    "    ⦁ */help* \\- Помощь \n\n"
+                    "Начнем? 😊🚀"
+                )  
+                
+                await event.answer(text, parse_mode=ParseMode.MARKDOWN_V2)
 
                 # Добавляем нового пользователя в базу данных
                 await db.add_user(
@@ -134,9 +146,9 @@ class CheckNewUserMiddleware(BaseMiddleware):
                     username=event.from_user.username,
                     language_code=event.from_user.language_code
                 )
-            else:
-                # Вызываем следующий обработчик
-                return await handler(event, data)
+            
+            # Вызываем следующий обработчик
+            return await handler(event, data)
 
 class IncrementRequestsMiddleware(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
