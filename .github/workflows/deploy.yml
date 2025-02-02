@@ -128,6 +128,6 @@ jobs:
           script: |
             cd /root/ChatGPT_Telegram_Bot
             git checkout main
-            git revert --no-edit HEAD  # Откатывает последний коммит
+            git revert -m 1 --no-edit HEAD  # Откатывает последний коммит
             # Пушим изменения обратно в main
             git push origin main
