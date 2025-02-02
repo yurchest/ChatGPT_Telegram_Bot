@@ -17,7 +17,7 @@ from src.aiogram.middlewares.middlewares import (
 from src.gpt import OpenAI_API
 from src.database import Redis
 
-from src.prometheus_metrics import handler_duration, count_messages
+from src.prometheus_metrics import MESSAGE_RESPONSE_TIME, MESSAGE_RPS_COUNTER
 
 router = Router()
 
@@ -34,11 +34,11 @@ router.message.middleware(IncrementRequestsMiddleware())
 
 
 @router.message(F.text)
-@handler_duration.time()
+@MESSAGE_RESPONSE_TIME.time()
 async def message_handler(message: Message, db : Database, openai: OpenAI_API, redis: Redis) -> None:
     history = await redis.get_history(message.from_user.id)
 
-    # raise ValueError("Message handle Test error")
+    raise ValueError("Message handle Test error")
 
     user_message = {'role': 'user', 'content': message.text}
     assistant_reply, role, num_in_tokens, num_out_tokens = await openai.get_response(history, user_message)
@@ -61,7 +61,7 @@ async def message_handler(message: Message, db : Database, openai: OpenAI_API, r
             tokens=num_out_tokens
         )
 
-    count_messages.inc()
+    MESSAGE_RPS_COUNTER.inc()
 
     await message.answer(assistant_reply, parse_mode=ParseMode.MARKDOWN)
 

@@ -7,6 +7,8 @@ from src.database import Redis, Database
 import sys
 import traceback
 
+from src.prometheus_metrics import ERROR_COUNTER
+
 
 router = Router()
 
@@ -53,6 +55,9 @@ async def global_error_handler(event: ErrorEvent, bot: Bot, redis: Redis, db: Da
     # Удаляем историю сессии
     await redis.clear_user_history(telegram_id)
     await redis.set_user_req_inactive(telegram_id)
+
+    # Увеличиваем метрику ошибок
+    ERROR_COUNTER.labels(error_type=str(exception)).inc()
 
     # Уведомляем пользователя
     if telegram_id:
