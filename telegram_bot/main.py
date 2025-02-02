@@ -42,7 +42,7 @@ async def main() -> None:
     
     # Регистрация lifecycle-событий
     dp.startup.register(partial(on_startup, db))
-    dp.shutdown.register(partial(on_shutdown, db, redis, openai))
+    dp.shutdown.register(partial(on_shutdown, db, redis))
 
     # dp.update.middleware(ErrorLoggingMiddleware(
     #     bot=bot,
@@ -68,8 +68,8 @@ async def main() -> None:
 if __name__ == "__main__":
     # Start up the server to expose the metrics.
     start_http_server(8000)
-
     asyncio.run(main())
+        
 
 
 

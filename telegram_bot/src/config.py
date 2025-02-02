@@ -4,8 +4,8 @@ from src.logger import logger
 
 
 # Загружаем  .env файл
-dotenv_path = "../.env" # TODO Закоментить Удалить на проде
-load_dotenv(dotenv_path)
+# dotenv_path = "../.env" # TODO Закоментить Удалить на проде
+# load_dotenv(dotenv_path)
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")
 
