@@ -142,6 +142,36 @@ services:
     networks:
       - app_network
     restart: unless-stopped
+  
+  node_exporter:
+    image: prom/node-exporter:latest  # Используем официальный образ node_exporter
+    container_name: node_exporter
+    restart: unless-stopped
+    # ports:
+    #   - "9100:9100"  # Проксиируем порт 9100, на котором работает node_exporter
+    volumes:
+      - /proc:/host/proc:ro  # Монтируем /proc, чтобы node_exporter мог собирать системные метрики
+      - /sys:/host/sys:ro    # Монтируем /sys для дополнительных метрик
+      - /:/host/root:ro      # Монтируем корневую файловую систему (для некоторых метрик, таких как нагрузка на диски)
+    environment:
+      - NODE_EXPORTER_WEB_LISTEN_ADDRESS=0.0.0.0:9100  # Устанавливаем адрес для прослушивания на всех интерфейсах
+    networks:
+      - app_network  # Подключаем к сети, если у вас есть сеть для мониторинга
+    
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.2
+    container_name: cadvisor
+    # ports:
+    #   - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    restart: unless-stopped
+    networks:
+      - app_network 
+
     
 
 volumes:
@@ -149,7 +179,7 @@ volumes:
   pgadmin-data:
   redis-data:
   prometheus_data:
-  grafana_data:
+  # grafana_data:
 
 networks:
   app_network:
