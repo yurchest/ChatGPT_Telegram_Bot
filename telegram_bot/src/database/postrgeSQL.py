@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, Boolean, BigInteger, func, text, DateTime
 from sqlalchemy.sql import expression
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy import update
 
 from src.logger import logger
 
@@ -11,6 +12,8 @@ from src.config import SUBSCRIPTION_DURATION_MONTHS, TRIAL_PERIOD_NUM_REQ
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
 import pytz
+
+SRV_TZ = pytz.timezone("Europe/Moscow")
 
 class Base(DeclarativeBase): pass
 
@@ -35,6 +38,7 @@ class User(Base):
     num_input_tokens = Column(BigInteger, default=0)
     num_output_tokens = Column(BigInteger, default=0)
     sub_expiration_date = Column(DateTime(timezone=True), nullable=True)
+    last_req_date = Column(DateTime(timezone=True), nullable=True)  
 
 class Payment(Base):
     __tablename__ = 'payments'
@@ -151,6 +155,20 @@ class Database:
                 user = await session.get(User, telegram_id)
                 user.num_output_tokens += tokens
                 # logger.info(f"(POSTGRE)\t User {telegram_id} output tokens ({tokens}) added")
+    
+    @handle_db_errors
+    async def update_last_req_date(self, telegram_id: int):
+        """Обновляет last_req_date для пользователя с указанным telegram_id."""
+        async with self.SessionLocal() as session:
+            async with session.begin():
+                stmt = (
+                    update(User)
+                    .where(User.telegram_id == telegram_id)
+                    .values(last_req_date=datetime.now())
+                    # .values(last_req_date=datetime.now(tz=SRV_TZ))
+                )
+                await session.execute(stmt)
+                logger.debug("(POSTGRE)\t Updated last_req_date for user_id: %s", telegram_id)
 
     @handle_db_errors
     async def get_num_requests(self, telegram_id: int) -> int:

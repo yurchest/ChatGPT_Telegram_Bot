@@ -162,6 +162,8 @@ class IncrementRequestsMiddleware(BaseMiddleware):
             
             # Увеличиваем счетчик запросов пользователя
             await db.increment_user_requests(event.from_user.id)
+            # Обновляем дату последнего запроса
+            await db.update_last_req_date(event.from_user.id)
 
         # Вызываем следующий обработчик
         return result
