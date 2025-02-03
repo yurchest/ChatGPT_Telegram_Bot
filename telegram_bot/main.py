@@ -3,7 +3,7 @@ from src.database import Database, Redis
 from src.gpt import OpenAI_API
 from src.logger import logger
 from src.aiogram.middlewares.middlewares import (
-    ErrorLoggingMiddleware,
+    ErrorLoggingMiddleware, # Deprecated
     DatabaseMiddleware, 
     OpenAIMiddleware, 
     RedisMiddleware 
@@ -66,8 +66,10 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    
     # Start up the server to expose the metrics.
     start_http_server(8000)
+
     asyncio.run(main())
         
 

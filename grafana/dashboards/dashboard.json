@@ -816,8 +816,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -875,28 +874,13 @@
           {
             "matcher": {
               "id": "byName",
-              "options": "1||||Message handle Test error"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
               "options": "Error"
             },
             "properties": [
               {
                 "id": "color",
                 "value": {
-                  "fixedColor": "red",
+                  "fixedColor": "#f2495c80",
                   "mode": "fixed"
                 }
               }
@@ -927,23 +911,13 @@
       "pluginVersion": "11.5.0",
       "targets": [
         {
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "rate(aiogram_rps_total[1m])",
-          "instant": false,
-          "interval": "",
-          "legendFormat": "RPS",
-          "range": true,
-          "refId": "Message RPS"
-        },
-        {
           "datasource": {
             "type": "prometheus",
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(irate(aiogram_errors_total[1m]))",
+          "expr": "sum(rate(aiogram_errors_total[1m])) or vector(0)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -951,6 +925,16 @@
           "legendFormat": "Error",
           "range": true,
           "refId": "Errors RPS"
+        },
+        {
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "rate(aiogram_rps_total[1m]) ",
+          "instant": false,
+          "interval": "",
+          "legendFormat": "RPS",
+          "range": true,
+          "refId": "Message RPS"
         }
       ],
       "title": "RPS(messages)",
@@ -1007,8 +991,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1088,8 +1071,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1133,7 +1115,7 @@
       "targets": [
         {
           "editorMode": "code",
-          "expr": "sum(increase(aiogram_errors_total[1m])) by (error_type)",
+          "expr": "sum(increase(aiogram_errors_total[1m])) by (error_type) or vector(0)",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
@@ -1151,8 +1133,8 @@
     "list": [
       {
         "current": {
-          "text": "node_memory_MemTotal_bytes{instance=\"node_exporter:9100\",job=\"node\"} 1003937792 1738525004000",
-          "value": "node_memory_MemTotal_bytes{instance=\"node_exporter:9100\",job=\"node\"} 1003937792 1738525004000"
+          "text": "node_memory_MemTotal_bytes{instance=\"node_exporter:9100\",job=\"node\"} 16647487488 1738543273000",
+          "value": "node_memory_MemTotal_bytes{instance=\"node_exporter:9100\",job=\"node\"} 16647487488 1738543273000"
         },
         "definition": "query_result(node_memory_MemTotal_bytes)",
         "name": "TotalMemory",
@@ -1174,7 +1156,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Dashboard1 Copy",
+  "title": "Main",
   "uid": "bebvhcicfeo00d",
   "version": 1,
   "weekStart": ""
