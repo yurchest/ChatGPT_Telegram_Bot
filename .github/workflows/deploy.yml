@@ -33,6 +33,7 @@ jobs:
 
 
       - name: Pull Repo
+        id: pull_repo
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -41,9 +42,12 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd /root/ChatGPT_Telegram_Bot
+            # Отменить все локальные изменения внутри этой папки (вернуть на состояние последнего коммита)
+            git restore grafana/dashboards/ 
             git pull origin main
 
       - name: Backup current images before deployment
+        id: backup_images
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -100,7 +104,7 @@ jobs:
             
       # Откат контейнеров, если деплой провалился
       - name: Rollback on failure
-        if: failure()
+        if: failure() && steps.backup_images.outcome == 'success'
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SSH_HOST }}
@@ -116,7 +120,7 @@ jobs:
             
       # Шаг отката изменений в случае неудачного деплоя
       - name: Revert commit if deploy failed
-        if: failure()
+        if: failure() && steps.pull_repo.outcome == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Подключаем токен
         uses: appleboy/ssh-action@v1.2.0
