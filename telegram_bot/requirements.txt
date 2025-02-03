@@ -11,3 +11,5 @@ colorlog==6.9.0
 python-dateutil==2.9.0.post0
 pytz==2024.2
 prometheus_client==0.21.1
+telegramify-markdown==0.4.1
+telegramify-markdown[mermaid]==0.4.1

@@ -3,6 +3,7 @@ from aiogram.types import Message
 from aiogram.enums import ParseMode
 
 from src.logger import logger
+from src.aiogram.utils import split_message
 
 from src.database import Database
 from src.aiogram.middlewares.middlewares import (
@@ -15,6 +16,8 @@ from src.aiogram.middlewares.middlewares import (
     )
 from src.gpt import OpenAI_API
 from src.database import Redis
+
+from src.aiogram.utils import answer_message
 
 
 router = Router()
@@ -38,7 +41,13 @@ router.message.middleware(IncrementRequestsMiddleware())
 async def message_handler(message: Message, db : Database, openai: OpenAI_API, redis: Redis) -> None:
     history = await redis.get_history(message.from_user.id)
 
+    ## TEST
+    ## ----------------------------
     # raise ValueError("1||||Message handle Test error")
+    # test_mesage = 'a' * 5000
+    # for message_to_send in split_message(test_mesage, with_photo=False):
+    #     await message.answer(message_to_send, parse_mode=ParseMode.MARKDOWN)
+    ## ----------------------------
 
     user_message = {'role': 'user', 'content': message.text}
     assistant_reply, role, num_in_tokens, num_out_tokens = await openai.get_response(history, user_message)
@@ -60,7 +69,15 @@ async def message_handler(message: Message, db : Database, openai: OpenAI_API, r
             telegram_id=message.from_user.id,
             tokens=num_out_tokens
         )
+    
+    # # Работает, но это встроено в telegramify-markdown
+    # for message_to_send in split_message(assistant_reply, with_photo=False):
+    #     await message.answer(message_to_send, parse_mode=ParseMode.MARKDOWN)
 
-    await message.answer(assistant_reply, parse_mode=ParseMode.MARKDOWN)
+    await answer_message(
+        md=assistant_reply,
+        message=message,
+    )
+    
 
 
