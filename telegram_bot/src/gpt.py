@@ -2,7 +2,7 @@ import openai
 from openai import AsyncOpenAI
 import asyncio
 
-from src.config import OPENAI_API_KEY
+from src.config import OPENAI_API_KEY, ENVIRONMENT
 from src.logger import logger
 
 def handle_openai_errors(func):
@@ -18,7 +18,7 @@ class OpenAI_API():
     def __init__(self):
         try:
             """Инициализируем OpenAI API"""
-            self.model_id = "gpt-4o-mini"
+            self.model_id = "gpt-4o-mini" if ENVIRONMENT=="prod" else "gpt-4o-mini"
             self.client = AsyncOpenAI(
                 api_key=OPENAI_API_KEY,  # This is the default and can be omitted
             )
