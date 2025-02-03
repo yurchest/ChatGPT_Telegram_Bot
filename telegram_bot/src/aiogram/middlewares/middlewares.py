@@ -1,5 +1,6 @@
 import asyncio
 import traceback
+from datetime import datetime
 
 from aiogram import BaseMiddleware, Bot
 from aiogram.types import (
@@ -14,8 +15,10 @@ from src.gpt import OpenAI_API
 from src.database import Redis
 from src.config import SUBSCRIPTION_DURATION_MONTHS, TRIAL_PERIOD_NUM_REQ
 from src.aiogram.handlers.system import get_payment_keyboard_markup
+from src.prometheus_metrics import MESSAGE_RESPONSE_TIME, MESSAGE_RPS_COUNTER
 
 from src.logger import logger
+
 
 class ErrorLoggingMiddleware(BaseMiddleware):
     def __init__(self, bot: Bot, db: Database, redis: Redis):
@@ -65,9 +68,33 @@ class ErrorLoggingMiddleware(BaseMiddleware):
                     text=f"Произошла непредвиденная ошибка\nСвяжитесь с разработчиком (@yurchest)\nError: {exception}"
                 )
 
-            # Не блокируем выполнение
+            # Блокируем выполнение
             # raise exception
 
+class TimingMessageMiddleware(BaseMiddleware):
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        """
+        Замеряем MESSAGE_RESPONSE_TIME
+        """
+        start_time = datetime.now()  # Фиксируем момент получения сообщения ботом
+
+        result =  await handler(event, data)
+        
+        if isinstance(event, Message):
+            # Разница во времени
+            message_latency: datetime = (start_time - event.date.replace(tzinfo=None)).total_seconds()  
+            # Время обработки сообщения ботом
+            response_time = (datetime.now() - start_time).total_seconds() 
+            # Общее время от отправки до ответа 
+            total_latency = message_latency + response_time  
+            # Логируем
+            logger.debug(f"(MAIN)\t\t User latency: {message_latency:.3f}s, Bot processing: {response_time:.3f}s, Total: {total_latency:.3f}s")
+            # Пишем в Prometheus
+            MESSAGE_RESPONSE_TIME.observe(total_latency) # Отправляем в Prometheus
+        
+        return result
+
+        
 
 class DatabaseMiddleware(BaseMiddleware):
     def __init__(self, db: Database):
@@ -164,6 +191,8 @@ class IncrementRequestsMiddleware(BaseMiddleware):
             await db.increment_user_requests(event.from_user.id)
             # Обновляем дату последнего запроса
             await db.update_last_req_date(event.from_user.id)
+            # Отправляем в Prometheus
+            MESSAGE_RPS_COUNTER.inc()
 
         # Вызываем следующий обработчик
         return result

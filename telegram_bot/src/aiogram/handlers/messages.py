@@ -13,13 +13,16 @@ from src.aiogram.middlewares.middlewares import (
     IncrementRequestsMiddleware,
     CheckSubscriptionMiddleware,
     CheckTrialPeriodMiddleware,
+    TimingMessageMiddleware
     )
 from src.gpt import OpenAI_API
 from src.database import Redis
 
-from src.prometheus_metrics import MESSAGE_RESPONSE_TIME, MESSAGE_RPS_COUNTER
 
 router = Router()
+
+# Inner/Outer Middlwares
+router.message.middleware(TimingMessageMiddleware())
 
 # Inner Middlwares
 router.message.middleware(CheckNewUserMiddleware())
@@ -34,7 +37,6 @@ router.message.middleware(IncrementRequestsMiddleware())
 
 
 @router.message(F.text)
-@MESSAGE_RESPONSE_TIME.time()
 async def message_handler(message: Message, db : Database, openai: OpenAI_API, redis: Redis) -> None:
     history = await redis.get_history(message.from_user.id)
 
@@ -60,8 +62,6 @@ async def message_handler(message: Message, db : Database, openai: OpenAI_API, r
             telegram_id=message.from_user.id,
             tokens=num_out_tokens
         )
-
-    MESSAGE_RPS_COUNTER.inc()
 
     await message.answer(assistant_reply, parse_mode=ParseMode.MARKDOWN)
 
