@@ -7,4 +7,4 @@ MESSAGE_RESPONSE_TIME = Histogram(
     buckets=[0.1, 0.5, 1, 2, 5, 10, 30, 60]
     )
 MESSAGE_RPS_COUNTER = Counter('aiogram_rps', 'Messages count')
-ERROR_COUNTER = Counter('aiogram_errors', 'Number of errors in Aiogram', ['error_type'])
+ERRORS_COUNTER = Counter('aiogram_errors', 'Number of errors in Aiogram', ['error_type'])

@@ -7,7 +7,7 @@ from src.database import Redis, Database
 import sys
 import traceback
 
-from src.prometheus_metrics import ERROR_COUNTER
+from src.prometheus_metrics import ERRORS_COUNTER
 
 
 router = Router()
@@ -57,7 +57,7 @@ async def global_error_handler(event: ErrorEvent, bot: Bot, redis: Redis, db: Da
     await redis.set_user_req_inactive(telegram_id)
 
     # Увеличиваем метрику ошибок
-    ERROR_COUNTER.labels(error_type=str(exception)).inc()
+    ERRORS_COUNTER.labels(error_type=str(exception.__class__.__name__)).inc()
 
     # Уведомляем пользователя
     if telegram_id:
