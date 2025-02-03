@@ -43,7 +43,7 @@ jobs:
           script: |
             cd /root/ChatGPT_Telegram_Bot
             # Отменить все локальные изменения внутри этой папки (вернуть на состояние последнего коммита)
-            git restore grafana/dashboards/ 
+            # git restore grafana/dashboards/ 
             git pull origin main
 
       - name: Backup current images before deployment
