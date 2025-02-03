@@ -943,7 +943,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(rate(aiogram_errors_total[1m]))",
+          "expr": "sum(irate(aiogram_errors_total[1m]))",
           "format": "time_series",
           "hide": false,
           "instant": false,
