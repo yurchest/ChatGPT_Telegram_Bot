@@ -8,6 +8,7 @@ on:
       - "*.md"  # Игнорирует изменения во всех Markdown файлах (например, README.md, CONTRIBUTING.md и т.д.)
       - ".github/**"
       - "*.gitignore"
+      - ".scripts/**"
   # workflow_dispatch:  # Запуск вручную из GitHub Actions
 
 jobs:
