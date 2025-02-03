@@ -1,5 +1,6 @@
 from prometheus_client import Summary, Histogram, Counter
 
+
 # Метрика для времени ответа (обработки запроса)
 MESSAGE_RESPONSE_TIME = Histogram(
     'aiogram_response_duration_seconds',
