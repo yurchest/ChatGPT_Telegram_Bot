@@ -2,9 +2,7 @@ from aiogram import Router, Bot, F
 from aiogram.types import Message
 from aiogram.enums import ParseMode
 
-from src.config import TRIAL_PERIOD_NUM_REQ
 from src.logger import logger
-from src.aiogram.decorators.decorators import check_new_user
 
 from src.database import Database
 from src.aiogram.middlewares.middlewares import (
