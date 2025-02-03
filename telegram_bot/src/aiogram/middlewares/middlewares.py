@@ -157,10 +157,10 @@ class CheckNewUserMiddleware(BaseMiddleware):
                     f"Ты можешь бесплатно воспользоваться ботом в течение *{TRIAL_PERIOD_NUM_REQ} запросов*\\. \n"
                     f"По истечении пробного периода тебе будет предложено оплатить подписку на *{SUBSCRIPTION_DURATION_MONTHS} месяц\\(ев\\)*\n"
                     "🔹 *Основные команды:* \n"    
-                    "    ⦁ */reset\\_conversation* \\- Сбросить диалог \n"
-                    "    ⦁ */pay* \\- Оплатить подписку \n"
-                    "    ⦁ */show\\_dialog* \\- Показать весь диалог \n"
-                    "    ⦁ */help* \\- Помощь \n\n"
+                    "    ⦁ Сбросить диалог\n      */reset\\_conversation*  \n"
+                    "    ⦁ Оплатить подписку\n      */pay* \n"
+                    "    ⦁ Показать весь диалог\n      */show\\_dialog* \n"
+                    "    ⦁ Помощь\n      */help*  \n\n"
                     "Начнем? 😊🚀"
                 )  
                 
@@ -273,6 +273,18 @@ class WaitingMiddleware(BaseMiddleware):
 
         await tech_message.delete()
         if user_message: await user_message.delete()
+
+
+    async def delete_message_when_active(self, redis: Redis, 
+                                           user_id: int, 
+                                           tech_message: TelegramObject):
+        """
+        Удаляем сообщение, когда пользователь снова что-то отправит
+        """
+        while not await redis.is_user_waiting(user_id):
+            await asyncio.sleep(0.5)
+
+        await tech_message.delete()
         
 
     async def __call__(self, handler, event: TelegramObject, data: dict):
@@ -304,6 +316,21 @@ class WaitingMiddleware(BaseMiddleware):
             result = await handler(event, data)
             # Удаляем флаг активности запроса пользователя
             await redis.set_user_req_inactive(event.from_user.id)
+
+            history: list[dict] = await redis.get_history(event.from_user.id)
+
+            if len(history) / 2 % 10 == 0 and len(history) / 2 != 0:
+                # Если количество сообщений кратно 10 (каждые 10 сообщений)
+                # Напоминалка, что можно сбросить диалог
+                tech_message = await event.answer(
+                    "*💬 Ваш диалог затянулся\\.\\.\\.*\n\n"
+                    "🔹 Если сменили тему, используйте команду */reset\\_conversation*, чтобы сбросить диалог\\.\n"
+                    "🔹 Это ускорит время ответа и улучшит понимание контекста\\. ⏳",
+                    parse_mode=ParseMode.MARKDOWN_V2
+                )
+                # Создаем задачу на удаление сообщения
+                asyncio.create_task(self.delete_message_when_active(redis, event.from_user.id, tech_message))
+                
             return result
 
             

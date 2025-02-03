@@ -36,7 +36,7 @@ async def global_error_handler(event: ErrorEvent, bot: Bot, redis: Redis, db: Da
     logger.error(
         msg=(
             f"Global error occurred\n"
-            f"{filepath}\nFunc name:]\t{func_name}\n"
+            f"{filepath}\nFunc name:\t{func_name}\n"
             f"{(lineno)}\t{line}\n"
             f"{(exception.__class__.__name__)}\t{exception}"
         ), 

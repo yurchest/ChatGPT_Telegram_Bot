@@ -2,7 +2,7 @@ import openai
 from openai import AsyncOpenAI
 import asyncio
 
-from src.config import OPENAI_API_KEY, ENVIRONMENT
+from src.config import OPENAI_API_KEY, ENVIRONMENT, MAX_TOKENS
 from src.logger import logger
 
 def handle_openai_errors(func):
@@ -11,7 +11,7 @@ def handle_openai_errors(func):
             return await func(*args, **kwargs)
         except Exception as e:
             logger.error(f"(OpenAI)\t Error in {func.__name__}: {e}")
-            return None
+            raise
     return wrapper
 
 class OpenAI_API():
@@ -65,13 +65,21 @@ class OpenAI_API():
         response = await self.client.chat.completions.create(
             model=self.model_id,
             messages=api_message,
+            max_completion_tokens=MAX_TOKENS,
         )
+        logger.debug(f"(OpenAI)\t Get response from OpenAI")
+
+        # length    - что-то недописал по причине ограничения max_completion_tokens
+        # stop      - все дописал
+        finish_reason: str = response.choices[0].finish_reason 
+
+        logger.debug(f"(OpenAI)\t Finish_reason: {finish_reason}")
 
         role = response.choices[0].message.role
         assistent_reply = response.choices[0].message.content.strip()
         num_in_tokens = response.usage.prompt_tokens
         num_out_tokens = response.usage.completion_tokens
-        logger.debug(f"(OpenAI)\t Get response from OpenAI")
+        
         return assistent_reply, role, num_in_tokens, num_out_tokens
 
     @handle_openai_errors
