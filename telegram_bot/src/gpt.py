@@ -2,7 +2,7 @@ import openai
 from openai import AsyncOpenAI
 import asyncio
 
-from src.config import OPENAI_API_KEY, ENVIRONMENT
+from src.config import OPENAI_API_KEY, ENVIRONMENT, MAX_TOKENS
 from src.logger import logger
 
 def handle_openai_errors(func):
@@ -65,6 +65,7 @@ class OpenAI_API():
         response = await self.client.chat.completions.create(
             model=self.model_id,
             messages=api_message,
+            max_completion_tokens=MAX_TOKENS,
         )
 
         role = response.choices[0].message.role

@@ -145,7 +145,7 @@ class Database:
             async with session.begin():
                 user = await session.get(User, telegram_id)
                 user.num_input_tokens += tokens
-                # logger.info(f"(POSTGRE)\t User {telegram_id} input tokens ({tokens}) added")
+                logger.debug(f"(POSTGRE)\t User {telegram_id} input tokens ({tokens}) added")
 
     @handle_db_errors
     async def add_user_output_tokens(self, telegram_id: int, tokens: int):
@@ -154,7 +154,7 @@ class Database:
             async with session.begin():
                 user = await session.get(User, telegram_id)
                 user.num_output_tokens += tokens
-                # logger.info(f"(POSTGRE)\t User {telegram_id} output tokens ({tokens}) added")
+                logger.debug(f"(POSTGRE)\t User {telegram_id} output tokens ({tokens}) added")
     
     @handle_db_errors
     async def update_last_req_date(self, telegram_id: int):
