@@ -17,7 +17,7 @@ from aiogram import Bot, Dispatcher
 import asyncio
 from functools import partial
 
-from prometheus_client import start_http_server, Summary
+from prometheus_client import start_http_server
 
 @init_error_handler
 async def main() -> None:
