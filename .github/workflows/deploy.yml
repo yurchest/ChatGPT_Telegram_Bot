@@ -46,6 +46,7 @@ jobs:
             docker system prune -f  # Очищаем старые образы и контейнеры (опционально)
 
 
+
   tag_release:
     name: Tag new release
     needs: deploy  # Тегируем только после успешного деплоя
