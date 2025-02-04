@@ -3,130 +3,90 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - main
-    paths-ignore:
-      - "*.md"  # Игнорирует изменения во всех Markdown файлах (например, README.md, CONTRIBUTING.md и т.д.)
-      - ".github/**"
-      - "*.gitignore"
-      - ".scripts/**"
-  # workflow_dispatch:  # Запуск вручную из GitHub Actions
+      - prod
+  pull_request:
+    branches:
+      - prod  # Проверки при PR в prod
 
 jobs:
+  test:
+      name: Run Tests
+      runs-on: ubuntu-latest
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v4
+
+        - name: Run Linter & Tests
+          run: |
+            pip install -r requirements.txt
+            # TODO
+            # pytest
+
+
   deploy:
+    name: Deploy to VPS
+    needs: test
+    if: github.event_name == 'push'  # Деплой только на push в prod!
     runs-on: ubuntu-latest
-    permissions:
-      contents: write  # Разрешаем запись в репозиторий
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST  }}
+          username: ${{ secrets.SSH_USER  }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            set -e  # Остановка при ошибке
+            cd /path/to/project
+            git pull origin prod
+            docker compose down
+            docker compose build
+            docker compose up -d
+    
+  rollback:
+    name: Rollback to last stable version
+    if: failure()  # Запускаем откат, если deploy упал
+    runs-on: ubuntu-latest
+    needs: deploy  # Ждем завершения deploy
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Configure Git
+      - name: Get last 2 release tags
+        id: get_tags
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "github-actions@github.com"
-      
+          # Получаем два последних релиза
+          TAGS=($(git tag --sort=-creatordate | head -2))
+          echo "LATEST_TAG=${TAGS[0]}" >> $GITHUB_ENV
+          echo "PREV_TAG=${TAGS[1]}" >> $GITHUB_ENV
 
+      - name: Revert to previous release
+        run: |
+          git revert -m 1 --no-edit HEAD
+          git commit --amend -m "Release $PREV_TAG (Revert $LATEST_TAG) [skip ci]"
+          git push origin prod
 
-      - name: Pull Repo
-        id: pull_repo
-        uses: appleboy/ssh-action@v1.2.0
+      - name: Restart Docker Compose on Server
+        uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
+          host: ${{ secrets.SSH_HOST  }}
+          username: ${{ secrets.SSH_USER  }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            cd /root/ChatGPT_Telegram_Bot
-            # Отменить все локальные изменения внутри этой папки (вернуть на состояние последнего коммита)
-            # git restore grafana/dashboards/ 
-            git pull origin main
+            set -e  # Остановка при ошибке
+            cd /path/to/project
 
+            echo "Pulling latest stable commit from prod"
+            git pull origin prod  # Обновляем код после отката
+
+            echo "Stopping running containers"
+            docker compose down
+
+            echo "Rebuilding and restarting services"
+            docker compose build  # Пересобираем (если Dockerfile изменился)
+            docker compose up -d   # Запускаем заново
       
-      # - name: Docker Compose Pull
-      #   uses: appleboy/ssh-action@v1.2.0
-      #   with:
-      #     host: ${{ secrets.SSH_HOST }}
-      #     username: ${{ secrets.SSH_USER }}
-      #     key: ${{ secrets.SSH_KEY }}
-      #     port: ${{ secrets.SSH_PORT }}
-      #     script: |
-      #       cd /root/ChatGPT_Telegram_Bot
-      #       docker compose pull
-
-      - name: Containers Build
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd /root/ChatGPT_Telegram_Bot
-            git checkout main
-            docker compose build  # Пересобирает контейнеры
-
-      - name: Containers up
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd /root/ChatGPT_Telegram_Bot
-            docker compose up -d  # Запускает контейнеры без остановки
-
-      - name: Prune unused images and volumes
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            docker image prune -f
-            docker volume prune -f
-            
-      # # Откат контейнеров, если деплой провалился
-      # - name: Rollback on failure
-      #   if: failure() && steps.backup_images.outcome == 'success'
-      #   uses: appleboy/ssh-action@v1.2.0
-      #   with:
-      #     host: ${{ secrets.SSH_HOST }}
-      #     username: ${{ secrets.SSH_USER }}
-      #     key: ${{ secrets.SSH_KEY }}
-      #     port: ${{ secrets.SSH_PORT }}
-      #     script: |
-      #       echo "Rolling back to previous version..."
-      #       cd /root/ChatGPT_Telegram_Bot
-      #       docker compose down
-      #       docker compose pull $(cat /root/backup_images.txt | awk '{print $2}')
-      #       docker compose up -d
-      
-      
-      # # Шаг отката изменений в случае неудачного деплоя
-      # - name: Revert commit if deploy failed
-      #   if: failure() && steps.pull_repo.outcome == 'success'
-      #   env:
-      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Подключаем токен
-      #   uses: appleboy/ssh-action@v1.2.0
-      #   with:
-      #     host: ${{ secrets.SSH_HOST }}
-      #     username: ${{ secrets.SSH_USER }}
-      #     key: ${{ secrets.SSH_KEY }}
-      #     port: ${{ secrets.SSH_PORT }}
-      #     script: |
-      #       cd /root/ChatGPT_Telegram_Bot
-      #       git checkout main
-      #       git revert -m 1 --no-edit HEAD  # Откатывает последний коммит
-      #       # Пушим изменения обратно в main
-      #       git push origin main --force
-      
-
