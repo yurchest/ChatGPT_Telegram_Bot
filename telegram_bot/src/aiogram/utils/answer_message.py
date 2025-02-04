@@ -28,7 +28,7 @@ async def answer_message(md: str, message: Message):
         Telegram имеет ограничения на количество сообщений, отправляемых за короткий промежуток времени. 
         Если сервер медленный, он может не успеть обработать несколько сообщений до того, как Telegram ограничит отправку.
         """
-        asyncio.sleep(0.5)
+        await asyncio.sleep(0.5)
         try:
             if item.content_type == ContentTypes.TEXT:
                 await message.answer(
