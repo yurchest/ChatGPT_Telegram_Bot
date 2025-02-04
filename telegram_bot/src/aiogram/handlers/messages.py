@@ -1,3 +1,6 @@
+
+import asyncio
+
 from aiogram import Router, Bot, F
 from aiogram.types import Message
 from aiogram.enums import ParseMode
@@ -78,6 +81,5 @@ async def message_handler(message: Message, db : Database, openai: OpenAI_API, r
         md=assistant_reply,
         message=message,
     )
-    
 
 

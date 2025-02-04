@@ -50,7 +50,7 @@ services:
       - .env
     environment:
       TZ: Europe/Moscow
-      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_SERVER_MODE: "True"
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     ports:
