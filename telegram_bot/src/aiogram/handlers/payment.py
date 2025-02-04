@@ -2,6 +2,7 @@ import json
 import pytz
 
 from aiogram import Router, Bot, F
+from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.types import (
     Message, 
@@ -16,6 +17,10 @@ from src.logger import logger
 from src.database import Redis, Database
 from src.aiogram.middlewares.middlewares import WaitingMiddleware 
 from src.aiogram.handlers.system import get_payment_keyboard_markup
+
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
 
 from src.config import (
     YOOKASSA_PAYMENT_TOKEN, 
@@ -40,19 +45,33 @@ async def pay_callback(callback: CallbackQuery, bot: Bot, db: Database):
     await callback.answer() # Чтобы убрать ожидание (часики)
     
 
-@router.message(Command('pay'))
+@router.message(Command("pay"))
 async def pay_handler(message: Message, bot: Bot, db: Database):
-    if await db.is_subscription_active(message.from_user.id):
+    user_id = message.from_user.id
+
+    if await db.is_subscription_active(user_id):
         sub_expiration_date = await db.get_sub_expiration_date(
-            telegram_id=message.from_user.id, 
-            user_tz="Europe/Moscow"
-            )
+            telegram_id=user_id, user_tz="Europe/Moscow"
+        )
+        sub_expiration_date = datetime.now()
+        # Форматируем текущую дату окончания подписки
+        formatted_date = sub_expiration_date.strftime("%Y-%m-%d %H:%M:%S")
+
+        # Добавляем количество месяцев к подписке
+        extended_date = (sub_expiration_date + relativedelta(months=SUBSCRIPTION_DURATION_MONTHS)).strftime("%Y-%m-%d %H:%M:%S")
+
+        text = "\n".join([
+            "✅ *Вы уже подписаны\\!*\n",
+            f"📅 *Окончание текущей подписки:* `{formatted_date} (МСК)`",
+            "",
+            f"🔄 *Вы можете продлить подписку до:* `{extended_date} (МСК)`",
+        ])
+
         await message.answer(
-            f"Вы уже подписаны \n"
-            f"Дата окончания подписки: {sub_expiration_date.strftime("%Y-%m-%d %H:%M:%S")}\n"
-            f"Но также вы можете продлить подписку",
+            text=text,
+            parse_mode=ParseMode.MARKDOWN_V2,
             reply_markup=get_payment_keyboard_markup()
-            )
+        )
         return
 
     await send_invoice(
