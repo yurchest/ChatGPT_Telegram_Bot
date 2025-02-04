@@ -64,6 +64,8 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
+            set -e  # Остановка при ошибке
+            cd /root/ChatGPT_Telegram_Bot
             # Получаем последний тег (например, v1.4.4)
             LATEST_TAG=$(git tag --sort=-creatordate | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
             
