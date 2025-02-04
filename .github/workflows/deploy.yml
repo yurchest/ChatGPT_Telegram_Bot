@@ -59,16 +59,16 @@ jobs:
             cd /root/ChatGPT_Telegram_Bot
             docker compose images > /root/backup_images.txt
       
-      - name: Docker Compose Pull
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd /root/ChatGPT_Telegram_Bot
-            docker compose pull
+      # - name: Docker Compose Pull
+      #   uses: appleboy/ssh-action@v1.2.0
+      #   with:
+      #     host: ${{ secrets.SSH_HOST }}
+      #     username: ${{ secrets.SSH_USER }}
+      #     key: ${{ secrets.SSH_KEY }}
+      #     port: ${{ secrets.SSH_PORT }}
+      #     script: |
+      #       cd /root/ChatGPT_Telegram_Bot
+      #       docker compose pull
 
       - name: Containers Build
         uses: appleboy/ssh-action@v1.2.0
@@ -103,36 +103,38 @@ jobs:
             docker image prune -f
             docker volume prune -f
             
-      # Откат контейнеров, если деплой провалился
-      - name: Rollback on failure
-        if: failure() && steps.backup_images.outcome == 'success'
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            echo "Rolling back to previous version..."
-            cd /root/ChatGPT_Telegram_Bot
-            docker compose down
-            docker compose pull $(cat /root/backup_images.txt | awk '{print $2}')
-            docker compose up -d
-            
-      # Шаг отката изменений в случае неудачного деплоя
-      - name: Revert commit if deploy failed
-        if: failure() && steps.pull_repo.outcome == 'success'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Подключаем токен
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd /root/ChatGPT_Telegram_Bot
-            git checkout main
-            git revert -m 1 --no-edit HEAD  # Откатывает последний коммит
-            # Пушим изменения обратно в main
-            git push origin main
+      # # Откат контейнеров, если деплой провалился
+      # - name: Rollback on failure
+      #   if: failure() && steps.backup_images.outcome == 'success'
+      #   uses: appleboy/ssh-action@v1.2.0
+      #   with:
+      #     host: ${{ secrets.SSH_HOST }}
+      #     username: ${{ secrets.SSH_USER }}
+      #     key: ${{ secrets.SSH_KEY }}
+      #     port: ${{ secrets.SSH_PORT }}
+      #     script: |
+      #       echo "Rolling back to previous version..."
+      #       cd /root/ChatGPT_Telegram_Bot
+      #       docker compose down
+      #       docker compose pull $(cat /root/backup_images.txt | awk '{print $2}')
+      #       docker compose up -d
+      
+      
+      # # Шаг отката изменений в случае неудачного деплоя
+      # - name: Revert commit if deploy failed
+      #   if: failure() && steps.pull_repo.outcome == 'success'
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Подключаем токен
+      #   uses: appleboy/ssh-action@v1.2.0
+      #   with:
+      #     host: ${{ secrets.SSH_HOST }}
+      #     username: ${{ secrets.SSH_USER }}
+      #     key: ${{ secrets.SSH_KEY }}
+      #     port: ${{ secrets.SSH_PORT }}
+      #     script: |
+      #       cd /root/ChatGPT_Telegram_Bot
+      #       git checkout main
+      #       git revert -m 1 --no-edit HEAD  # Откатывает последний коммит
+      #       # Пушим изменения обратно в main
+      #       git push origin main
+      
