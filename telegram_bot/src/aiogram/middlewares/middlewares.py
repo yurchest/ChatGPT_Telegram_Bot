@@ -82,14 +82,14 @@ class TimingMessageMiddleware(BaseMiddleware):
         result =  await handler(event, data)
         
         if isinstance(event, Message):
-            # Разница во времени
-            message_latency: datetime = (start_time - event.date.replace(tzinfo=None)).total_seconds()  
-            # Время обработки сообщения ботом
+            # Время обработки сообщения основной логикой
             response_time = (datetime.now() - start_time).total_seconds() 
+            # Время от отправки сообщения пользователем до начала основной логики
+            message_latency: datetime = (start_time - event.date.replace(tzinfo=None)).total_seconds()  
             # Общее время от отправки до ответа 
             total_latency = message_latency + response_time  
             # Логируем
-            logger.debug(f"(MAIN)\t\t User latency: {message_latency:.3f}s, Bot processing: {response_time:.3f}s, Total: {total_latency:.3f}s")
+            logger.debug(f"(MAIN)\t\t Telegram latency: {message_latency:.3f}s, Bot processing: {response_time:.3f}s, Total: {total_latency:.3f}s")
             # Пишем в Prometheus
             MESSAGE_RESPONSE_TIME.observe(total_latency) # Отправляем в Prometheus
         
@@ -172,8 +172,8 @@ class CheckNewUserMiddleware(BaseMiddleware):
                     language_code=event.from_user.language_code
                 )
             
-            # Вызываем следующий обработчик
-            return await handler(event, data)
+        # Вызываем следующий обработчик
+        return await handler(event, data)
 
 class IncrementRequestsMiddleware(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
@@ -218,9 +218,9 @@ class CheckTrialPeriodMiddleware(BaseMiddleware):
                     reply_markup=get_payment_keyboard_markup()
                 )
             else:
-                await handler(event, data)
+                return await handler(event, data)
         else:
-            await handler(event, data)
+            return await handler(event, data)
 
 class CheckSubscriptionMiddleware(BaseMiddleware):
     """
@@ -247,9 +247,9 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
                 )
                 # TODO: Добавить кнопку для продления подписки
             else:
-                await handler(event, data)
+                return await handler(event, data)
         else:
-            await handler(event, data)
+            return await handler(event, data)
 
     
 class WaitingMiddleware(BaseMiddleware):
@@ -259,18 +259,25 @@ class WaitingMiddleware(BaseMiddleware):
     В процессе запроса присваиваем активность (Redis).
     После выполнения технические сообщения удаляются.
     """
-    async def delete_message_when_inactive(self, redis: Redis, 
-                                           user_id: int, 
-                                           tech_message: TelegramObject, 
-                                           user_message: TelegramObject = None):
+    async def delete_message_when_inactive(
+            self, redis: Redis, 
+            user_id: int,
+            tech_message: TelegramObject, 
+            user_message: TelegramObject = None
+            ):
         """
         Ожидает, пока пользователь ждет ответа.
         """
+        # Удаляем пользователское сообщение
+        if user_message: await user_message.delete()
+
         while await redis.is_user_waiting(user_id):
+            # Ожидаем пока юзеру ответит бот на предыдущее сообщение
             await asyncio.sleep(0.1)
 
+        # Удаляем техническое сообщение
         await tech_message.delete()
-        if user_message: await user_message.delete()
+        
 
 
     async def delete_message_when_active(self, redis: Redis, 
@@ -297,39 +304,38 @@ class WaitingMiddleware(BaseMiddleware):
 
         tech_message = None  # Для хранения ссылки на отправленное сообщение
 
-        
         if is_user_waiting:
             # Если запрос пользователя активен, отправляем сообщение о том, что запрос обрабатывается
-            tech_message = await event.answer("Ваш запрос обрабатывается. Пожалуйста, подождите.")
+            tech_message = await event.answer("Ваш запрос обрабатывается. Пожалуйста, подождите...")
             asyncio.create_task(self.delete_message_when_inactive(redis, event.from_user.id, tech_message, event))
             return  # Завершаем выполнение, так как запрос уже обрабатывается
-        else:
-            # Отправляем техническое сообщение с точками
-            tech_message = await event.answer(". . . . . .")
-            # Устанавливаем флаг активности запроса пользователя
-            await redis.set_user_req_active(event.from_user.id)
-            # Ожидаем когда запрос станет неактивным
-            asyncio.create_task(self.delete_message_when_inactive(redis, event.from_user.id, tech_message))
-            # Вызываем следующий обработчик
-            result = await handler(event, data)
-            # Удаляем флаг активности запроса пользователя
-            await redis.set_user_req_inactive(event.from_user.id)
+        
+        # Отправляем техническое сообщение с точками
+        tech_message = await event.answer(". . . . . .")
+        # Устанавливаем флаг активности запроса пользователя
+        await redis.set_user_req_active(event.from_user.id)
+        # Ожидаем когда запрос станет неактивным
+        asyncio.create_task(self.delete_message_when_inactive(redis, event.from_user.id, tech_message))
+        # Вызываем следующий обработчик
+        result = await handler(event, data)
+        # Удаляем флаг активности запроса пользователя
+        await redis.set_user_req_inactive(event.from_user.id)
 
-            history: list[dict] = await redis.get_history(event.from_user.id)
+        history: list[dict] = await redis.get_history(event.from_user.id)
 
-            if len(history) / 2 % 10 == 0 and len(history) / 2 != 0:
-                # Если количество сообщений кратно 10 (каждые 10 сообщений)
-                # Напоминалка, что можно сбросить диалог
-                tech_message = await event.answer(
-                    "*💬 Ваш диалог затянулся\\.\\.\\.*\n\n"
-                    "🔹 Если сменили тему, используйте команду */reset\\_conversation*, чтобы сбросить диалог\\.\n"
-                    "🔹 Это ускорит время ответа и улучшит понимание контекста\\. ⏳",
-                    parse_mode=ParseMode.MARKDOWN_V2
-                )
-                # Создаем задачу на удаление сообщения
-                asyncio.create_task(self.delete_message_when_active(redis, event.from_user.id, tech_message))
-                
-            return result
+        if len(history) / 2 % 10 == 0 and len(history) / 2 != 0:
+            # Если количество сообщений кратно 10 (каждые 10 сообщений)
+            # Напоминалка, что можно сбросить диалог
+            tech_message = await event.answer(
+                "*💬 Ваш диалог затянулся\\.\\.\\.*\n\n"
+                "🔹 Если сменили тему, используйте команду */reset\\_conversation*, чтобы сбросить диалог\\.\n"
+                "🔹 Это ускорит время ответа и улучшит понимание контекста\\. ⏳",
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
+            # Создаем задачу на удаление сообщения
+            asyncio.create_task(self.delete_message_when_active(redis, event.from_user.id, tech_message))
+            
+        return result
 
             
 
