@@ -64,7 +64,6 @@ async def main() -> None:
     await dp.start_polling(bot)
 
 
-
 if __name__ == "__main__":
     
     # Start up the server to expose the metrics.
