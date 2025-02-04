@@ -55,7 +55,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Get latest tag
+      - name: Create and push tag
         id: get_tag
         uses: appleboy/ssh-action@master
         with:
@@ -66,31 +66,22 @@ jobs:
           script: |
             set -e  # Остановка при ошибке
             cd /root/ChatGPT_Telegram_Bot
-            # Получаем последний тег (например, v1.4.4)
+
+            echo "Getting latest tag"
             LATEST_TAG=$(git tag --sort=-creatordate | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
-            
+
             if [[ -z "$LATEST_TAG" ]]; then
-              NEW_TAG="v1.0.0"  # Если тега нет, начинаем с v1.0.0
+              NEW_TAG="v1.0.0"  # Если тегов нет, начинаем с v1.0.0
             else
               # Увеличиваем патч-версию (v1.4.4 -> v1.4.5)
               IFS='.' read -r -a PARTS <<< "${LATEST_TAG:1}"  # Убираем "v" и разбиваем на массив
               NEW_TAG="v${PARTS[0]}.${PARTS[1]}.$((PARTS[2] + 1))"
             fi
-            
-            echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
-            echo "Latest tag: $LATEST_TAG"
-            echo "Next tag: $NEW_TAG"
 
-      - name: Create and push new tag
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SSH_HOST  }}
-          username: ${{ secrets.SSH_USER  }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
+            echo "Creating new tag: $NEW_TAG"
             git tag $NEW_TAG
             git push origin $NEW_TAG
+
 
 
   # rollback:
