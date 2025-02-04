@@ -43,7 +43,6 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd /root/ChatGPT_Telegram_Bot
-            git checkout main
             # Отменить все локальные изменения внутри этой папки (вернуть на состояние последнего коммита)
             # git restore grafana/dashboards/ 
             git pull origin main
@@ -80,6 +79,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             cd /root/ChatGPT_Telegram_Bot
+            git checkout main
             docker compose build  # Пересобирает контейнеры
 
       - name: Containers up
