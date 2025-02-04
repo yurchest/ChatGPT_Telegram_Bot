@@ -3,10 +3,10 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - main
+      - prod
   pull_request:
     branches:
-      - main  # Проверки при PR в prod
+      - prod  # Проверки при PR в prod
 
 jobs:
   test:
