@@ -8,6 +8,8 @@ from aiogram.enums import ParseMode
 
 from src.logger import logger
 
+import asyncio
+
 
 # Copied from 
 # https://github.com/sudoskys/telegramify-markdown/blob/main/playground/telegramify_case.py
@@ -22,6 +24,11 @@ async def answer_message(md: str, message: Message):
         max_word_count=4090  # The maximum number of words in a single message.
     )
     for item in boxs:
+        """
+        Telegram имеет ограничения на количество сообщений, отправляемых за короткий промежуток времени. 
+        Если сервер медленный, он может не успеть обработать несколько сообщений до того, как Telegram ограничит отправку.
+        """
+        asyncio.sleep(0.5)
         try:
             if item.content_type == ContentTypes.TEXT:
                 await message.answer(
