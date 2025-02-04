@@ -66,9 +66,12 @@ jobs:
           script: |
             set -e  # Остановка при ошибке
             cd /root/ChatGPT_Telegram_Bot
+            git checkout prod
+            git pull origin prod
 
             echo "Getting latest tag"
             LATEST_TAG=$(git tag --sort=-creatordate | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+            echo "LATEST_TAG: $LATEST_TAG"
 
             if [[ -z "$LATEST_TAG" ]]; then
               NEW_TAG="v1.0.0"  # Если тегов нет, начинаем с v1.0.0
