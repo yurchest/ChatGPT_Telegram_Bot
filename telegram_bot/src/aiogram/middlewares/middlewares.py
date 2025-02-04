@@ -13,7 +13,12 @@ from aiogram.enums import ParseMode
 from src.database import Database
 from src.gpt import OpenAI_API
 from src.database import Redis
-from src.config import SUBSCRIPTION_DURATION_MONTHS, TRIAL_PERIOD_NUM_REQ, MAX_HISTORY_LENGTH
+from src.config import (
+    SUBSCRIPTION_DURATION_MONTHS, 
+    TRIAL_PERIOD_NUM_REQ, 
+    MAX_HISTORY_LENGTH_TRIAL, 
+    MAX_HISTORY_LENGTH_PAID
+)
 from src.aiogram.handlers.system import get_payment_keyboard_markup
 from src.prometheus_metrics import MESSAGE_RESPONSE_TIME, MESSAGE_RPS_COUNTER
 from src.aiogram.utils import commands_text
@@ -308,33 +313,78 @@ class WaitingMiddleware(BaseMiddleware):
 
 
 class CheckHistoryLengthMiddleware(BaseMiddleware):
-    async def __call__(self, handler, event: TelegramObject, data: dict):
-        # Получаем объект базы данных из контекста
-        redis: Redis = data.get("redis")
 
-        if redis is None:
-            raise ValueError("Redis instance must be provided in the context data.")
-
-        history: list[dict] = await redis.get_history(event.from_user.id)
-
-        if len(history) / 2 >= MAX_HISTORY_LENGTH:
+    async def is_history_length_out(self, message: Message, history_mes_count, limit):
+        if history_mes_count >= limit:
             # Закончился лимит истории
-            tech_message = await event.answer(
-                f"*💬 Превышен лимит истории в {MAX_HISTORY_LENGTH} сообщений\\.*\n\n"
+            tech_message = await message.answer(
+                f"*💬 Превышен лимит истории в {limit} сообщений\\.*\n\n"
                 "🔹 Используйте команду */reset\\_conversation*, чтобы сбросить диалог и начать общение с чиcтого листа\\.\n"
                 "🔹 */help* \\- помощь\n",
                 parse_mode=ParseMode.MARKDOWN_V2
             )
-            return
-        
+            return True
+        else:
+            return False
+
+
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        # Получаем объект базы данных из контекста
+        redis: Redis = data.get("redis")
+        db: Database = data.get("db")
+
+        if redis is None:
+            raise ValueError("Redis instance must be provided in the context data.")
+        if db is None:
+            raise ValueError("Database instance must be provided in the context data.")
+
+        history: list[dict] = await redis.get_history(event.from_user.id)
+        history_mes_count = len(history) // 2  # Целочисленное деление
+
+        is_sub_active = await db.is_subscription_active(event.from_user.id)
+        if is_sub_active:
+            max_history = MAX_HISTORY_LENGTH_PAID
+        else:
+            max_history = MAX_HISTORY_LENGTH_TRIAL
+
+        if await self.is_history_length_out(event, history_mes_count, max_history): return
+
+        # Вызываем следующий обработчик        
         result = await handler(event, data)
 
-        if(len(history) / 2 / MAX_HISTORY_LENGTH > 0.6)  and (len(history) / 2 % 5 == 0 and len(history) / 2 != 0):
+        history_mes_count += 1
+        
+        if history_mes_count >= max_history:
+            # Закончился лимит истории
+            if is_sub_active:
+                tech_message = await event.answer(
+                    f"*💬 Превышен лимит истории в `{max_history}` сообщений\\.*\n\n"
+                    "🔹 Используйте команду */reset\\_conversation*, чтобы сбросить диалог и начать общение с чиcтого листа\\.\n"
+                    "🔹 */help* \\- помощь\n",
+                    parse_mode=ParseMode.MARKDOWN_V2
+                )
+            else:
+                await redis.clear_user_history(event.from_user.id)
+                await event.answer(
+                    f"*💬 Превышен лимит истории в `{max_history}` сообщений\\.*\n\n"
+                    "Ваш диалог был сброшен\\. Вы можете продолжить общение с чиcтого листа\\.\n"
+                    f"Для увеличения диалога до `{MAX_HISTORY_LENGTH_PAID}` сообщений, оплатите подписку\\.\n",
+                    parse_mode=ParseMode.MARKDOWN_V2,
+                    reply_markup=get_payment_keyboard_markup()
+                )
+
+        if history_mes_count > 10 and \
+            history_mes_count / max_history > 0.6  and \
+                history_mes_count % 5 == 0 and \
+                    history_mes_count != 0:
             # Если кол-во сообщений близится к пределу И количество сообщений кратно 5 (каждые 5 сообщений)
             # Напоминалка, что можно сбросить диалог
-            remain_messages = int(MAX_HISTORY_LENGTH - len(history) / 2)
+            remain_messages = max_history - history_mes_count
+
+            # logger.debug(f"remain_messages: {remain_messages}")
+
             tech_message = await event.answer(
-                f"*💬 У вас осталось `{remain_messages}/{MAX_HISTORY_LENGTH}` сообщений до сброса диалога\\.\\.\\.*\n\n"
+                f"*💬 У вас осталось `{remain_messages}/{max_history}` сообщений до сброса диалога\\.\\.\\.*\n\n"
                 "🔹 Если сменили тему, используйте команду */reset\\_conversation*, чтобы начать с чистого листа\\.\n"
                 "🔹 Это ускорит время ответа и улучшит понимание контекста\\. ⏳",
                 parse_mode=ParseMode.MARKDOWN_V2
