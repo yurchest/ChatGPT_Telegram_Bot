@@ -18,7 +18,6 @@ jobs:
 
         - name: Run Linter & Tests
           run: |
-            pip install -r requirements.txt
             # TODO
             # pytest
 
@@ -39,7 +38,8 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             set -e  # Остановка при ошибке
-            cd /path/to/project
+            cd /root/ChatGPT_Telegram_Bot
+            git checkout prod
             git pull origin prod
             docker compose down
             docker compose build
@@ -59,12 +59,16 @@ jobs:
         id: get_tags
         run: |
           # Получаем два последних релиза
+          cd /root/ChatGPT_Telegram_Bot
+          git checkout prod
           TAGS=($(git tag --sort=-creatordate | head -2))
           echo "LATEST_TAG=${TAGS[0]}" >> $GITHUB_ENV
           echo "PREV_TAG=${TAGS[1]}" >> $GITHUB_ENV
 
       - name: Revert to previous release
         run: |
+          cd /root/ChatGPT_Telegram_Bot
+          git checkout prod
           git revert -m 1 --no-edit HEAD
           git commit --amend -m "Release $PREV_TAG (Revert $LATEST_TAG) [skip ci]"
           git push origin prod
@@ -78,7 +82,8 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             set -e  # Остановка при ошибке
-            cd /path/to/project
+            cd /root/ChatGPT_Telegram_Bot
+            git checkout prod
 
             echo "Pulling latest stable commit from prod"
             git pull origin prod  # Обновляем код после отката
