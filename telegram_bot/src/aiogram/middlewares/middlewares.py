@@ -13,7 +13,7 @@ from aiogram.enums import ParseMode
 from src.database import Database
 from src.gpt import OpenAI_API
 from src.database import Redis
-from src.config import SUBSCRIPTION_DURATION_MONTHS, TRIAL_PERIOD_NUM_REQ
+from src.config import SUBSCRIPTION_DURATION_MONTHS, TRIAL_PERIOD_NUM_REQ, MAX_HISTORY_LENGTH
 from src.aiogram.handlers.system import get_payment_keyboard_markup
 from src.prometheus_metrics import MESSAGE_RESPONSE_TIME, MESSAGE_RPS_COUNTER
 from src.aiogram.utils import commands_text
@@ -203,9 +203,12 @@ class CheckTrialPeriodMiddleware(BaseMiddleware):
         if isinstance(event, Message):
             # Получаем объект базы данных из контекста
             db: Database = data.get("db")
+            redis: Redis = data.get("redis")
             
             if db is None:
                 raise ValueError("Database instance must be provided in the context data.")
+            if redis is None:
+                raise ValueError("Redis instance must be provided in the context data.")
 
             # Проверяем, подписан ли пользователь
             is_subscription_active = await db.is_subscription_active(event.from_user.id)
@@ -217,6 +220,9 @@ class CheckTrialPeriodMiddleware(BaseMiddleware):
                     "Для продолжения использования сервиса, пожалуйста, подпишитесь.",
                     reply_markup=get_payment_keyboard_markup()
                 )
+                # Удаляем историю сообщений
+                # await redis.clear_user_history(event.from_user.id)
+
             else:
                 return await handler(event, data)
         else:
@@ -230,9 +236,12 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
         if isinstance(event, Message):
             # Получаем объект базы данных из контекста
             db: Database = data.get("db")
+            redis: Redis = data.get("redis")
             
             if db is None:
                 raise ValueError("Database instance must be provided in the context data.")
+            if redis is None:
+                raise ValueError("Redis instance must be provided in the context data.")
             
             # Проверяем, подписан ли пользователь
             is_subscription_active = await db.is_subscription_active(event.from_user.id)
@@ -245,7 +254,9 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
                     f"Для продолжения использования сервиса, пожалуйста, продлите подписку",
                     reply_markup=get_payment_keyboard_markup()
                 )
-                # TODO: Добавить кнопку для продления подписки
+                # Удаляем историю сообщений
+                await redis.clear_user_history(event.from_user.id)
+
             else:
                 return await handler(event, data)
         else:
@@ -323,7 +334,27 @@ class WaitingMiddleware(BaseMiddleware):
 
         history: list[dict] = await redis.get_history(event.from_user.id)
 
-        if len(history) / 2 % 10 == 0 and len(history) / 2 != 0:
+        if len(history) / 2 == MAX_HISTORY_LENGTH - 5:
+            # Напоминалка, что осталось 5 сообщений
+            tech_message = await event.answer(
+                f"*💬 У вас осталось 5/{MAX_HISTORY_LENGTH} сообщений до сброса диалога\\.\\.\\.*\n\n"
+                "🔹 */reset\\_conversation*, чтобы сбросить диалог\\.\n"
+                "🔹 Это ускорит время ответа и улучшит понимание контекста\\. ⏳",
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
+            asyncio.create_task(self.delete_message_when_active(redis, event.from_user.id, tech_message))
+            return result
+        
+        elif len(history) / 2 > MAX_HISTORY_LENGTH:
+            # Закончился лимит истории
+            tech_message = await event.answer(
+                f"*💬 Превышен лимит истории в {MAX_HISTORY_LENGTH} сообщений\\.*\n\n"
+                "🔹 Используйте команду */reset\\_conversation*, чтобы сбросить диалог и начать общение читого листа.\\.\n"
+                "🔹 */help* \\- помощь\\.\n",
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
+
+        elif len(history) / 2 % 10 == 0 and len(history) / 2 != 0:
             # Если количество сообщений кратно 10 (каждые 10 сообщений)
             # Напоминалка, что можно сбросить диалог
             tech_message = await event.answer(
@@ -334,8 +365,7 @@ class WaitingMiddleware(BaseMiddleware):
             )
             # Создаем задачу на удаление сообщения
             asyncio.create_task(self.delete_message_when_active(redis, event.from_user.id, tech_message))
-            
-        return result
+            return result
 
             
 
