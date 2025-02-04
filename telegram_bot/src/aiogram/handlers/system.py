@@ -15,7 +15,7 @@ async def on_startup(db: Database, bot: Bot):
 
 
 async def on_shutdown(db: Database, redis: Redis):
-    await redis.clear_all_history()
+    # await redis.clear_all_history()
     await redis.clear_all_waitings()
 
     await redis.close()

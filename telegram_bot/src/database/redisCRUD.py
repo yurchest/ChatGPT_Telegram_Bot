@@ -47,7 +47,7 @@ class Redis:
     async def append_to_history(self, user_id, messages: list):
         """Добавить сообщение в историю (без перезаписи)"""
         await self.redis.rpush(f"history:{user_id}", *(json.dumps(message) for message in messages))
-        await self.set_expiration(user_id=user_id, days=7)
+        await self.set_expiration(key=f"history:{user_id}", days=3)
         logger.debug(f"(Redis)\t Added: messages to user with id {user_id}")
 
     @handle_redis_errors
@@ -64,10 +64,10 @@ class Redis:
         logger.debug(f"(Redis)\t All history cleared")
 
     @handle_redis_errors
-    async def set_expiration(self, user_id, days=0.1):
+    async def set_expiration(self, key: str, *, days=0.1):
         """Установить время жизни ключа в днях"""
         seconds = days * 24 * 60 * 60
-        await self.redis.expire(user_id, seconds)
+        await self.redis.expire(key, seconds)
     
     @handle_redis_errors
     async def set_user_req_active(self, user_id):
