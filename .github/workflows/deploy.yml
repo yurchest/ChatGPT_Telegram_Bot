@@ -31,6 +31,7 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "github-actions@github.com"
+      
 
 
       - name: Pull Repo
@@ -47,17 +48,6 @@ jobs:
             # git restore grafana/dashboards/ 
             git pull origin main
 
-      - name: Backup current images before deployment
-        id: backup_images
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd /root/ChatGPT_Telegram_Bot
-            docker compose images > /root/backup_images.txt
       
       # - name: Docker Compose Pull
       #   uses: appleboy/ssh-action@v1.2.0
@@ -137,5 +127,6 @@ jobs:
       #       git checkout main
       #       git revert -m 1 --no-edit HEAD  # Откатывает последний коммит
       #       # Пушим изменения обратно в main
-      #       git push origin main
+      #       git push origin main --force
       
+
