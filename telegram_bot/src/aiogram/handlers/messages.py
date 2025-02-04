@@ -15,7 +15,8 @@ from src.aiogram.middlewares.middlewares import (
     IncrementRequestsMiddleware,
     CheckSubscriptionMiddleware,
     CheckTrialPeriodMiddleware,
-    TimingMessageMiddleware
+    TimingMessageMiddleware,
+    CheckHistoryLengthMiddleware
     )
 from src.gpt import OpenAI_API
 from src.database import Redis
@@ -35,6 +36,7 @@ router.message.middleware(CheckSubscriptionMiddleware())
 
 # Inner/Outer Middlwares
 router.message.middleware(WaitingMiddleware())
+router.message.middleware(CheckHistoryLengthMiddleware())
 
 # Outer Middlwares
 router.message.middleware(IncrementRequestsMiddleware())

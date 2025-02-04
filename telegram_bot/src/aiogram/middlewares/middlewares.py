@@ -269,9 +269,84 @@ class WaitingMiddleware(BaseMiddleware):
     Иначе выводим техническое сообщение - точки.
     В процессе запроса присваиваем активность (Redis).
     После выполнения технические сообщения удаляются.
-    """
-    async def delete_message_when_inactive(
-            self, redis: Redis, 
+    """ 
+
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        # Получаем объект базы данных из контекста
+        redis: Redis = data.get("redis")
+
+        if redis is None:
+            raise ValueError("Redis instance must be provided in the context data.")
+
+        # Проверяем, активен ли запрос пользователя
+        is_user_waiting = await redis.is_user_waiting(event.from_user.id)
+        
+
+        tech_message = None  # Для хранения ссылки на отправленное сообщение
+
+        if is_user_waiting:
+            # Если запрос пользователя активен, отправляем сообщение о том, что запрос обрабатывается
+            tech_message = await event.answer("Ваш запрос обрабатывается. Пожалуйста, подождите...")
+            asyncio.create_task(delete_message_when_inactive(redis, event.from_user.id, tech_message, event))
+            return  # Завершаем выполнение, так как запрос уже обрабатывается
+        
+        
+        # Отправляем техническое сообщение с точками
+        tech_message = await event.answer(". . . . . .")
+        # Устанавливаем флаг активности запроса пользователя
+        await redis.set_user_req_active(event.from_user.id)
+        # Ожидаем когда запрос станет неактивным
+        asyncio.create_task(delete_message_when_inactive(redis, event.from_user.id, tech_message))
+        # Вызываем следующий обработчик
+        result = await handler(event, data)
+        # Удаляем флаг активности запроса пользователя
+        await redis.set_user_req_inactive(event.from_user.id)
+
+        
+        return result
+
+
+
+class CheckHistoryLengthMiddleware(BaseMiddleware):
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        # Получаем объект базы данных из контекста
+        redis: Redis = data.get("redis")
+
+        if redis is None:
+            raise ValueError("Redis instance must be provided in the context data.")
+
+        history: list[dict] = await redis.get_history(event.from_user.id)
+
+        if len(history) / 2 >= MAX_HISTORY_LENGTH:
+            # Закончился лимит истории
+            tech_message = await event.answer(
+                f"*💬 Превышен лимит истории в {MAX_HISTORY_LENGTH} сообщений\\.*\n\n"
+                "🔹 Используйте команду */reset\\_conversation*, чтобы сбросить диалог и начать общение с чиcтого листа\\.\n"
+                "🔹 */help* \\- помощь\n",
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
+            return
+        
+        result = await handler(event, data)
+
+        if(len(history) / 2 / MAX_HISTORY_LENGTH > 0.6)  and (len(history) / 2 % 5 == 0 and len(history) / 2 != 0):
+            # Если кол-во сообщений близится к пределу И количество сообщений кратно 5 (каждые 5 сообщений)
+            # Напоминалка, что можно сбросить диалог
+            remain_messages = int(MAX_HISTORY_LENGTH - len(history) / 2)
+            tech_message = await event.answer(
+                f"*💬 У вас осталось `{remain_messages}/{MAX_HISTORY_LENGTH}` сообщений до сброса диалога\\.\\.\\.*\n\n"
+                "🔹 Если сменили тему, используйте команду */reset\\_conversation*, чтобы начать с чистого листа\\.\n"
+                "🔹 Это ускорит время ответа и улучшит понимание контекста\\. ⏳",
+                parse_mode=ParseMode.MARKDOWN_V2
+            )
+            # Создаем задачу на удаление сообщения
+            asyncio.create_task(delete_message_when_active(redis, event.from_user.id, tech_message))
+
+        return result
+
+
+async def delete_message_when_inactive(
+            redis: Redis, 
             user_id: int,
             tech_message: TelegramObject, 
             user_message: TelegramObject = None
@@ -291,87 +366,13 @@ class WaitingMiddleware(BaseMiddleware):
         
 
 
-    async def delete_message_when_active(self, redis: Redis, 
-                                           user_id: int, 
-                                           tech_message: TelegramObject):
-        """
-        Удаляем сообщение, когда пользователь снова что-то отправит
-        """
-        while not await redis.is_user_waiting(user_id):
-            await asyncio.sleep(0.5)
+async def delete_message_when_active(   redis: Redis, 
+                                        user_id: int, 
+                                        tech_message: TelegramObject):
+    """
+    Удаляем сообщение, когда пользователь снова что-то отправит
+    """
+    while not await redis.is_user_waiting(user_id):
+        await asyncio.sleep(0.5)
 
-        await tech_message.delete()
-        
-
-    async def __call__(self, handler, event: TelegramObject, data: dict):
-        # Получаем объект базы данных из контекста
-        redis: Redis = data.get("redis")
-
-        if redis is None:
-            raise ValueError("Redis instance must be provided in the context data.")
-
-        # Проверяем, активен ли запрос пользователя
-        is_user_waiting = await redis.is_user_waiting(event.from_user.id)
-
-        tech_message = None  # Для хранения ссылки на отправленное сообщение
-
-        if is_user_waiting:
-            # Если запрос пользователя активен, отправляем сообщение о том, что запрос обрабатывается
-            tech_message = await event.answer("Ваш запрос обрабатывается. Пожалуйста, подождите...")
-            asyncio.create_task(self.delete_message_when_inactive(redis, event.from_user.id, tech_message, event))
-            return  # Завершаем выполнение, так как запрос уже обрабатывается
-        
-        # Отправляем техническое сообщение с точками
-        tech_message = await event.answer(". . . . . .")
-        # Устанавливаем флаг активности запроса пользователя
-        await redis.set_user_req_active(event.from_user.id)
-        # Ожидаем когда запрос станет неактивным
-        asyncio.create_task(self.delete_message_when_inactive(redis, event.from_user.id, tech_message))
-        # Вызываем следующий обработчик
-        result = await handler(event, data)
-        # Удаляем флаг активности запроса пользователя
-        await redis.set_user_req_inactive(event.from_user.id)
-
-        history: list[dict] = await redis.get_history(event.from_user.id)
-
-        if len(history) / 2 == MAX_HISTORY_LENGTH - 5:
-            # Напоминалка, что осталось 5 сообщений
-            tech_message = await event.answer(
-                f"*💬 У вас осталось 5/{MAX_HISTORY_LENGTH} сообщений до сброса диалога\\.\\.\\.*\n\n"
-                "🔹 */reset\\_conversation*, чтобы сбросить диалог\\.\n"
-                "🔹 Это ускорит время ответа и улучшит понимание контекста\\. ⏳",
-                parse_mode=ParseMode.MARKDOWN_V2
-            )
-            asyncio.create_task(self.delete_message_when_active(redis, event.from_user.id, tech_message))
-            return result
-        
-        elif len(history) / 2 > MAX_HISTORY_LENGTH:
-            # Закончился лимит истории
-            tech_message = await event.answer(
-                f"*💬 Превышен лимит истории в {MAX_HISTORY_LENGTH} сообщений\\.*\n\n"
-                "🔹 Используйте команду */reset\\_conversation*, чтобы сбросить диалог и начать общение читого листа.\\.\n"
-                "🔹 */help* \\- помощь\\.\n",
-                parse_mode=ParseMode.MARKDOWN_V2
-            )
-
-        elif len(history) / 2 % 10 == 0 and len(history) / 2 != 0:
-            # Если количество сообщений кратно 10 (каждые 10 сообщений)
-            # Напоминалка, что можно сбросить диалог
-            tech_message = await event.answer(
-                "*💬 Ваш диалог затянулся\\.\\.\\.*\n\n"
-                "🔹 Если сменили тему, используйте команду */reset\\_conversation*, чтобы сбросить диалог\\.\n"
-                "🔹 Это ускорит время ответа и улучшит понимание контекста\\. ⏳",
-                parse_mode=ParseMode.MARKDOWN_V2
-            )
-            # Создаем задачу на удаление сообщения
-            asyncio.create_task(self.delete_message_when_active(redis, event.from_user.id, tech_message))
-            return result
-
-            
-
-
-
-    
-
-        
-
+    await tech_message.delete()
