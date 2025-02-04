@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy via SSH
+      - name: Deploy
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST  }}
@@ -41,9 +41,9 @@ jobs:
             cd /root/ChatGPT_Telegram_Bot
             git checkout prod
             git pull origin prod
-            docker compose down
-            docker compose build
-            docker compose up -d
+            docker-compose pull  # Загружаем свежие образы
+            docker-compose up --build -d  # Пересобираем и запускаем
+            docker system prune -f  # Очищаем старые образы и контейнеры (опционально)
     
   rollback:
     name: Rollback to last stable version
