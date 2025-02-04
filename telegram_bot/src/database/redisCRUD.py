@@ -59,8 +59,11 @@ class Redis:
     @handle_redis_errors
     async def clear_all_history(self):
         """Очистить всю историю сообщений"""
-        async for key in self.redis.scan_iter("history:*"):
-            await self.redis.delete(key)
+        # Ищем все ключи по паттерну
+        keys = await self.redis.keys("history:*")
+        # Удаляем
+        await self.redis.delete(*keys)
+        # Логируем
         logger.debug(f"(Redis)\t All history cleared")
 
     @handle_redis_errors
@@ -72,8 +75,7 @@ class Redis:
     @handle_redis_errors
     async def set_user_req_active(self, user_id):
         """Установить флаг user_processing:{user_id} = 1"""
-        await self.redis.set(f"user_processing:{user_id}", 1)
-        await self.set_expiration(f"user_processing:{user_id}", days=1)
+        await self.redis.set(f"user_processing:{user_id}", value=1, ex=60) # expiration 120 sec
         # logger.debug(f"(Redis)\t User with id {user_id} is processing")
     
     @handle_redis_errors
@@ -86,11 +88,14 @@ class Redis:
     async def set_user_req_inactive(self, user_id):
         """Установить флаг user_processing:{user_id} = 0"""
         await self.redis.delete(f"user_processing:{user_id}")
-        logger.debug(f"(Redis)\t User {user_id} requests set to inactive")
+        # logger.debug(f"(Redis)\t User {user_id} requests set to inactive")
 
     @handle_redis_errors
     async def clear_all_waitings(self):
         """Очистить все флаги активности запроса всех пользователей"""
-        async for key in self.redis.scan_iter("user_processing:*"):
-            await self.redis.delete(key)
-        logger.debug(f"(Redis)\t All waitings cleared")
+        # Ищем все ключи по паттерну
+        keys = await self.redis.keys("user_processing:*")
+        # Удаляем
+        await self.redis.delete(*keys)
+        # Логируем
+        logger.debug(f"(Redis)\t All waitings cleared ")
