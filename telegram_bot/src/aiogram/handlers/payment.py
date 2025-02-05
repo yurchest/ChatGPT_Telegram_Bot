@@ -53,7 +53,6 @@ async def pay_handler(message: Message, bot: Bot, db: Database):
         sub_expiration_date = await db.get_sub_expiration_date(
             telegram_id=user_id, user_tz="Europe/Moscow"
         )
-        sub_expiration_date = datetime.now()
         # Форматируем текущую дату окончания подписки
         formatted_date = sub_expiration_date.strftime("%Y-%m-%d %H:%M:%S")
 
