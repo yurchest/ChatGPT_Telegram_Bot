@@ -19,6 +19,8 @@ from functools import partial
 
 from prometheus_client import start_http_server
 
+from telegram_bot.src.aiogram.handlers import unknown
+
 @init_error_handler
 async def main() -> None:
     # db = Database("./database.db") # sqlite3
@@ -37,6 +39,7 @@ async def main() -> None:
         payment.router,
         commands.router,
         messages.router, 
+        unknown.router,
         errors.router,  
         )
     
