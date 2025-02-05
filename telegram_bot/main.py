@@ -9,7 +9,7 @@ from src.aiogram.middlewares.middlewares import (
     RedisMiddleware 
     )
 from src.aiogram.handlers.system import on_startup, on_shutdown, init_error_handler
-from src.aiogram.handlers import messages, commands, errors, payment
+from src.aiogram.handlers import messages, commands, errors, payment, unknown
 
 from aiogram.methods import DeleteWebhook
 from aiogram import Bot, Dispatcher
@@ -19,7 +19,6 @@ from functools import partial
 
 from prometheus_client import start_http_server
 
-from telegram_bot.src.aiogram.handlers import unknown
 
 @init_error_handler
 async def main() -> None:
