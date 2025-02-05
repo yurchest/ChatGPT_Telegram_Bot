@@ -373,14 +373,16 @@ class CheckHistoryLengthMiddleware(BaseMiddleware):
                     reply_markup=get_payment_keyboard_markup()
                 )
 
-        if history_mes_count > 10 and \
+        remain_messages = max_history - history_mes_count
+
+        if remain_messages != 0 and \
+            history_mes_count > 10 and \
             history_mes_count / max_history > 0.6  and \
-                history_mes_count % 5 == 0 and \
-                    history_mes_count != 0:
+            history_mes_count % 5 == 0 and \
+            history_mes_count != 0:
             # Если кол-во сообщений близится к пределу И количество сообщений кратно 5 (каждые 5 сообщений)
             # Напоминалка, что можно сбросить диалог
-            remain_messages = max_history - history_mes_count
-
+            
             # logger.debug(f"remain_messages: {remain_messages}")
 
             tech_message = await event.answer(
