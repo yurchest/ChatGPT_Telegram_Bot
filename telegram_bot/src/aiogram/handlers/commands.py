@@ -11,6 +11,7 @@ from src.config import TRIAL_PERIOD_NUM_REQ
 from src.aiogram.utils import commands_text, answer_message
 
 from datetime import datetime
+import re
 
 
 router = Router()
@@ -117,10 +118,10 @@ async def profile_handler(message: Message, db: Database):
 
 
 # Хэндлер для неизвестных команд
-@router.message(lambda message: message.text.startswith('/'))  # Если текст начинается с "/"
+@router.message(Command(re.compile(r"^.*"))) 
 async def unknown_command_handler(message: Message):
     text = "\n".join([
-        "🚫 Неизвестная команда\\.\n",
+        "🚫 Неизвестная команда\n",
         *commands_text,
     ]) 
     await message.answer(text, parse_mode=ParseMode.MARKDOWN_V2)
