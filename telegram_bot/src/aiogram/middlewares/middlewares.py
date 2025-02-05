@@ -151,10 +151,12 @@ class CheckNewUserMiddleware(BaseMiddleware):
             # Проверяем, существует ли пользователь в базе данных
             is_user_exists = await db.is_user_exists(event.from_user.id)
 
+            # Если пользователь новый, отправляем приветственное сообщение
             if not is_user_exists:
-                # Если пользователь новый, отправляем приветственное сообщение
+                # Отдельно записываем username, чтобы измежать имен по типу Абоба.имя!
+                username = event.from_user.first_name
                 text = "\n".join([
-                    f"*Привет, {event.from_user.first_name}\\! 👋*",
+                    f"*Привет, `{username}`\\! 👋*",
                     "",
                     "Я \\- *Yurchest ChatGPT Bot*, умный чат\\-бот на базе OpenAI GPT\\.",
                     "Готов помочь тебе с любыми вопросами: от написания текста до программирования\\!\n",
