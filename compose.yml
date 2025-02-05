@@ -8,6 +8,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env  # Load environment variables from the .env file
+    volumes:
+      - ./logs:/app/logs  # Примонтировать папку для логов   
     depends_on:
       - redis
       - postgres

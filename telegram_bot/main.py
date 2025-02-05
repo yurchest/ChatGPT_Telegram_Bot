@@ -64,9 +64,9 @@ async def main() -> None:
     await dp.start_polling(bot)
 
 
-
 if __name__ == "__main__":
-    
+    logger.warning("--------------------------------------")
+    logger.warning("(MAIN)\t\t Service starting ...")
     # Start up the server to expose the metrics.
     start_http_server(8000)
 

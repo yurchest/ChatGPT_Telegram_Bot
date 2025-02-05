@@ -62,7 +62,7 @@ class Redis:
         # Ищем все ключи по паттерну
         keys = await self.redis.keys("history:*")
         # Удаляем
-        await self.redis.delete(*keys)
+        if keys: await self.redis.delete(*keys)
         # Логируем
         logger.debug(f"(Redis)\t All history cleared")
 
@@ -95,7 +95,8 @@ class Redis:
         """Очистить все флаги активности запроса всех пользователей"""
         # Ищем все ключи по паттерну
         keys = await self.redis.keys("user_processing:*")
-        # Удаляем
-        await self.redis.delete(*keys)
+        # Удаляем ключи
+        if keys:await self.redis.delete(**keys)  # Правильная передача аргументов
         # Логируем
-        logger.debug(f"(Redis)\t All waitings cleared ")
+        logger.debug(f"(Redis)\t All waitings cleared")
+

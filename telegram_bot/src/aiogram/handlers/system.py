@@ -20,6 +20,8 @@ async def on_shutdown(db: Database, redis: Redis):
 
     await redis.close()
     await db.close()
+    logger.warning("(MAIN)\t\t Service stopped ...")
+    logger.warning("--------------------------------------")
 
 
 def init_error_handler(func):
