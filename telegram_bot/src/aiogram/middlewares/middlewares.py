@@ -152,7 +152,7 @@ class CheckNewUserMiddleware(BaseMiddleware):
                 raise ValueError("Redis instance must be provided in the context data.")
             
 
-            if event.text and event.text.startswith("/start"):
+            if event.text and event.text.startswith("/start") and len(event.text.split(" ", 1) > 1):
                 logger.debug(f"event.text: {event.text}")
                 args = event.text.split(" ", 1)[1] # Достаем аргумент
 
