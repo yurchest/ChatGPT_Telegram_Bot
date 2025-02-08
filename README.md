@@ -398,6 +398,11 @@ function is_mobile() {
     return false;
 }
 
+// Функция для вычисления SHA256 хэша
+function generate_sha256($string) {
+    return hash('sha256', $string);
+}
+
 // Если параметры есть
 if (!empty($query)) {
     // Преобразуем строку запроса в массив параметров
@@ -406,14 +411,31 @@ if (!empty($query)) {
     // Массив для хранения новых параметров
     $new_params = [];
 
-    // Перебираем параметры и преобразуем их в нужный формат
+    // Проверяем и добавляем параметр rb_clickid, если он есть
+    if (isset($params['rb_clickid'])) {
+        $rb_clickid = $params['rb_clickid'];
+        $rb_clickid_sha256 = generate_sha256($rb_clickid);
+
+        // Подключаемся к Redis
+        $redis = new Redis();
+        $redis->connect('127.0.0.1', 6380); // Подключение к Redis серверу
+
+        // Сохраняем rb_clickid в Redis с ключом rb_clickid:{SHA256}
+        $redis->set('rb_clickid:' . $rb_clickid_sha256, $rb_clickid);
+
+        // Добавляем в новый массив параметров
+        $new_params[] = 'rb_clickid-' . $rb_clickid_sha256;
+    }
+
+    // Перебираем остальные параметры и преобразуем их в нужный формат
     foreach ($params as $key => $value) {
-        $new_params[] = $key . '-' . $value;
+        if ($key !== 'rb_clickid') {
+            $new_params[] = $key . '-' . $value;
+        }
     }
 
     // Формируем новый параметр start
     $start_param = implode('__', $new_params);
-
 
     // Проверяем, что запрос с мобильного устройства
     if (is_mobile()) {
@@ -430,6 +452,7 @@ if (!empty($query)) {
     header('Location: https://t.me/yurchest_chatgpt_bot');
     exit();
 }
+
 
 
 ```
