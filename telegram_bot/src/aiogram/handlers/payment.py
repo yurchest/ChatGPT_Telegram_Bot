@@ -123,7 +123,7 @@ async def on_pre_checkout_query(pre_checkout_query: PreCheckoutQuery):
     logger.debug(f"(PAYMENT)\t Payment confirmed")
 
 @router.message(F.successful_payment)
-async def on_successful_payment(message: Message, db: Database):
+async def on_successful_payment(message: Message, db: Database, redis: Redis):
     await message.answer(
         f"Успешно оплачено {message.successful_payment.total_amount // 100} {message.successful_payment.currency}! \
 \nНомер платежа:\n{message.successful_payment.provider_payment_charge_id}",
@@ -144,5 +144,5 @@ message_effect_id="5104841245755180586",
         order_info=message.successful_payment.order_info
     )
 
-    await vk_send_pixel_event(redis=Redis, user_id=message.from_user.id, goal_name="payment")
+    await vk_send_pixel_event(redis=redis, user_id=message.from_user.id, goal_name="payment")
     

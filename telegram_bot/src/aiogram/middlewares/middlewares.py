@@ -184,7 +184,7 @@ class CheckNewUserMiddleware(BaseMiddleware):
                                 
                 await event.answer(text, parse_mode=ParseMode.MARKDOWN_V2)
 
-                await vk_send_pixel_event(redis=Redis, user_id=event.from_user.id, goal_name="registered")
+                await vk_send_pixel_event(redis=redis, user_id=event.from_user.id, goal_name="registered")
 
                 # Добавляем нового пользователя в базу данных
                 await db.add_user(
