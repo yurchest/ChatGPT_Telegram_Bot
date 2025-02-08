@@ -16,11 +16,15 @@ if ENVIRONMENT == "prod":
     YOOKASSA_PAYMENT_TOKEN = os.getenv("YOOKASSA_PAYMENT_TOKEN_LIVE")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY_PROD")
     MAX_TOKENS: int = int(os.getenv("MAX_TOKENS_PROD"))
+    VK_PIXEL_ID = int(os.getenv("VK_PIXEL_ID_PROD"))
 else:
     TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN_DEV")
     YOOKASSA_PAYMENT_TOKEN = os.getenv("YOOKASSA_PAYMENT_TOKEN_TEST")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY_DEV")
     MAX_TOKENS = int(os.getenv("MAX_TOKENS_DEV"))
+    VK_PIXEL_ID = int(os.getenv("VK_PIXEL_ID_TEST"))
+
+
 
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
