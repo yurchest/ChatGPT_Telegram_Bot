@@ -104,7 +104,7 @@ class Redis:
         """Получить rb_clickid по user_id"""
         rb_clickid = await self.redis.get(f"rb_clickid:{user_id}")
         if rb_clickid: logger.debug(f"(Redis)\t rb_clickid getted for user {user_id}")
-        else: logger.warning(f"(Redis)\t no rb_clickid for user {user_id}")
+        else: logger.debug(f"(Redis)\t no rb_clickid for user {user_id}")
         return rb_clickid
     
     @handle_redis_errors
@@ -117,9 +117,9 @@ class Redis:
             return
         # Удаляем rb_clickid по хэшу (так как больше не нужен)
         await self.redis.delete(f"rb_clickid:{sha256}")
-        seconds = 10 * 24 * 60 * 60                                     # 10 дней
+        # seconds = 10 * 24 * 60 * 60                                     # 10 дней
         # Обновляем rb_clickid для конкретного пользователя
-        await self.redis.set(f"rb_clickid:{user_id}", rb_clickid, ex=seconds)
+        await self.redis.set(f"rb_clickid:{user_id}", rb_clickid)
         logger.debug(f"(Redis)\t updated rb_clickid for user {user_id}")
 
         
