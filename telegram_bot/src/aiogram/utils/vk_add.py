@@ -6,8 +6,7 @@ from src.database import Redis
 from src.logger import logger
 
 
-
-## https://top-fwz1.mail.ru/tracker?id=3610766;e=RG%3A0/start;rb_clickid=RBCLICKID
+## https://top-fwz1.mail.ru/tracker?id=3610935;e=RG%3A20/registered;rb_clickid=RBCLICKID
 
 async def vk_send_pixel_event(redis: Redis, user_id: int, goal_name: str, cost: int):
     """Отправляет событие (цель) в Mail.ru Pixel"""
