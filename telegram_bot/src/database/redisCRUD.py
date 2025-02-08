@@ -106,13 +106,17 @@ class Redis:
         logger.debug(f"(Redis)\t rb_clickid getted for user {user_id}")
         return rb_clickid
     
+    @handle_redis_errors
     async def update_rb_clickid_to_user(self, sha256: str, user_id: int):
         """Присваиваивает(или обновляет) rb_clickid конкретному пользователю"""
         # Получаем rb_clickid по хэшу
         rb_clickid = await self.redis.get(f"rb_clickid:{sha256}")
+        if not rb_clickid:
+            logger.error(f"(Redis)\t Нет хэша rb_clickid")
+            return
         # Удаляем rb_clickid по хэшу (так как больше не нужен)
         await self.redis.delete(f"rb_clickid:{sha256}")
-        seconds = 10 * 24 * 60 * 60 # 10 дней
+        seconds = 10 * 24 * 60 * 60                                     # 10 дней
         # Обновляем rb_clickid для конкретного пользователя
         await self.redis.set(f"rb_clickid:{user_id}", rb_clickid, ex=seconds)
         logger.debug(f"(Redis)\t rb_clickid updated for user {user_id}")
