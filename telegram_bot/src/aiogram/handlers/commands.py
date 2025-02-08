@@ -14,6 +14,9 @@ from datetime import datetime
 import re
 
 
+def is_sha256(text):
+    return bool(re.fullmatch(r'[a-fA-F0-9]{64}', text))
+
 router = Router()
 
 router.message.middleware(CheckNewUserMiddleware())
@@ -21,14 +24,20 @@ router.message.middleware(WaitingMiddleware())
 
 
 @router.message(CommandStart())
-async def start_handler(message: Message, command: CommandObject) -> None:
+async def start_handler(message: Message, command: CommandObject, redis: Redis, db: Database) -> None:
     await message.answer("Можешь задавать интересующий тебя вопрос")
-    logger.debug(f"command.args: {command.args}")
-    if command.args is not None:
-        utm_parsed: dict = await parse_utm(command.args)
-        logger.debug(f"command.args parsed: {utm_parsed}")
-        if "rb_clickid" in utm_parsed:
-            await vk_send_pixel_event(rb_clickid=utm_parsed["rb_clickid"], goal_name="Registered")
+    argument = command.args
+    logger.debug(f"command.args: {argument}")
+    if argument is not None and is_sha256(argument):
+            # Обновлем rb_clickid по хэшу
+            await redis.update_rb_clickid_to_user(sha256=argument, user_id=message.from_user.id)
+            
+    # Только если новый пользователь
+    if not await db.is_user_exists(message.from_user.id):
+        # Получает rb_clickid(clean) по user_id
+        rb_clickid = await redis.get_rb_clickid(user_id=message.from_user.id)
+        # Отправляем событие Registered
+        if rb_clickid: await vk_send_pixel_event(rb_clickid=rb_clickid, goal_name="Registered")
 
 
 @router.message(Command('reset_conversation'))

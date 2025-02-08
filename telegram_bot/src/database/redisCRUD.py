@@ -75,13 +75,12 @@ class Redis:
     @handle_redis_errors
     async def set_user_req_active(self, user_id):
         """Установить флаг user_processing:{user_id} = 1"""
-        await self.redis.set(f"user_processing:{user_id}", value=1, ex=60) # expiration 120 sec
+        await self.redis.set(f"user_processing:{user_id}", value=1, ex=60) # expiration 60 sec
         # logger.debug(f"(Redis)\t User with id {user_id} is processing")
     
     @handle_redis_errors
     async def is_user_waiting(self, user_id):
         """Проверить, активен ли запрос пользователя"""
-        # logger.debug(f"(Redis)\t User with id {user_id} is waiting")
         return await self.redis.exists(f"user_processing:{user_id}")
     
     @handle_redis_errors
@@ -100,3 +99,22 @@ class Redis:
         # Логируем
         logger.debug(f"(Redis)\t All waitings cleared")
 
+    @handle_redis_errors
+    async def get_rb_clickid(self, user_id: str):
+        """Получить rb_clickid по user_id"""
+        rb_clickid = await self.redis.get(f"rb_clickid:{user_id}")
+        logger.debug(f"(Redis)\t rb_clickid getted for user {user_id}")
+        return rb_clickid
+    
+    async def update_rb_clickid_to_user(self, sha256: str, user_id: int):
+        """Присваиваивает(или обновляет) rb_clickid конкретному пользователю"""
+        # Получаем rb_clickid по хэшу
+        rb_clickid = await self.redis.get(f"rb_clickid:{sha256}")
+        # Удаляем rb_clickid по хэшу (так как больше не нужен)
+        await self.redis.delete(f"rb_clickid:{sha256}")
+        seconds = 10 * 24 * 60 * 60 # 10 дней
+        # Обновляем rb_clickid для конкретного пользователя
+        await self.redis.set(f"rb_clickid:{user_id}", rb_clickid, ex=seconds)
+        logger.debug(f"(Redis)\t rb_clickid updated for user {user_id}")
+
+        

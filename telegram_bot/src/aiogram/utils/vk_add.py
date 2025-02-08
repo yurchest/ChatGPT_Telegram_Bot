@@ -12,7 +12,7 @@ async def vk_send_pixel_event(rb_clickid: str, goal_name: str):
     """Отправляет событие (цель) в Mail.ru Pixel"""
 
     # Формируем URL с параметрами
-    url = f"https://top-fwz1.mail.ru/tracker?id={VK_PIXEL_ID};e=RG%3A0/{goal_name};rb_clickid={rb_clickid}"
+    url = f"https://top-fwz1.mail.ru/tracker?id={VK_PIXEL_ID};e=RG%3A100/{goal_name};rb_clickid={rb_clickid}"
     
     # Отправка GET запроса
     async with aiohttp.ClientSession() as session:
