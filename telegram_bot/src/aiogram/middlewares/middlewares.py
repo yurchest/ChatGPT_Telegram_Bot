@@ -21,7 +21,7 @@ from src.config import (
 )
 from src.aiogram.handlers.system import get_payment_keyboard_markup
 from src.prometheus_metrics import MESSAGE_RESPONSE_TIME, MESSAGE_RPS_COUNTER
-from src.aiogram.utils import commands_text
+from src.aiogram.utils import commands_text, is_sha256, vk_send_pixel_event
 
 from src.logger import logger
 
@@ -143,10 +143,23 @@ class CheckNewUserMiddleware(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
         if isinstance(event, Message):
             # Получаем объект базы данных из контекста
-            db:Database= data.get("db")
+            db: Database= data.get("db")
+            redis: Redis= data.get("redis")
             
             if db is None:
                 raise ValueError("Database instance must be provided in the context data.")
+            if redis is None:
+                raise ValueError("Redis instance must be provided in the context data.")
+            
+
+            if event.text and event.text.startswith("/start"):
+                logger.debug(f"event.text: {event.text}")
+                args = event.text.split(" ", 1)[1] # Достаем аргумент
+
+                logger.debug(f"command.args: {args}")
+                if args is not None and is_sha256(args):
+                        # Обновлем rb_clickid по хэшу
+                        await redis.update_rb_clickid_to_user(sha256=args, user_id=event.from_user.id)
         
             # Проверяем, существует ли пользователь в базе данных
             is_user_exists = await db.is_user_exists(event.from_user.id)
@@ -178,6 +191,12 @@ class CheckNewUserMiddleware(BaseMiddleware):
                     username=event.from_user.username,
                     language_code=event.from_user.language_code
                 )
+
+                ## Отправляем событие для рекламы
+                # Получает rb_clickid(clean) по user_id
+                rb_clickid = await redis.get_rb_clickid(user_id=event.from_user.id)
+                # Отправляем событие Registered
+                if rb_clickid: await vk_send_pixel_event(rb_clickid=rb_clickid, goal_name="Registered")
             
         # Вызываем следующий обработчик
         return await handler(event, data)
