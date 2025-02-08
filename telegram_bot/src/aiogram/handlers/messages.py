@@ -53,9 +53,9 @@ async def message_handler(message: Message, db : Database, openai: OpenAI_API, r
     # for message_to_send in split_message(test_mesage, with_photo=False):
     #     await message.answer(message_to_send, parse_mode=ParseMode.MARKDOWN)
     ## ----------------------------
-    
+
     if await db.get_num_requests(message.from_user.id) == 0:
-        await vk_send_pixel_event(redis=Redis, user_id=message.from_user.id, goal_name="first_requset")
+        await vk_send_pixel_event(redis=redis, user_id=message.from_user.id, goal_name="first_requset")
 
     user_message = {'role': 'user', 'content': message.text}
     assistant_reply, role, num_in_tokens, num_out_tokens = await openai.get_response(history, user_message)
