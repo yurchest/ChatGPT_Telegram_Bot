@@ -103,7 +103,8 @@ class Redis:
     async def get_rb_clickid(self, user_id: str):
         """Получить rb_clickid по user_id"""
         rb_clickid = await self.redis.get(f"rb_clickid:{user_id}")
-        logger.debug(f"(Redis)\t rb_clickid getted for user {user_id}")
+        if rb_clickid: logger.debug(f"(Redis)\t rb_clickid getted for user {user_id}")
+        else: logger.warning(f"(Redis)\t no rb_clickid for user {user_id}")
         return rb_clickid
     
     @handle_redis_errors
@@ -119,6 +120,6 @@ class Redis:
         seconds = 10 * 24 * 60 * 60                                     # 10 дней
         # Обновляем rb_clickid для конкретного пользователя
         await self.redis.set(f"rb_clickid:{user_id}", rb_clickid, ex=seconds)
-        logger.debug(f"(Redis)\t rb_clickid updated for user {user_id}")
+        logger.debug(f"(Redis)\t updated rb_clickid for user {user_id}")
 
         
