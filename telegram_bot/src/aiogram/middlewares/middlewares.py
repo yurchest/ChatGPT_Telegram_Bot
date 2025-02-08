@@ -184,6 +184,8 @@ class CheckNewUserMiddleware(BaseMiddleware):
                                 
                 await event.answer(text, parse_mode=ParseMode.MARKDOWN_V2)
 
+                await vk_send_pixel_event(redis=Redis, user_id=event.from_user.id, goal_name="registered")
+
                 # Добавляем нового пользователя в базу данных
                 await db.add_user(
                     telegram_id=event.from_user.id,
@@ -192,11 +194,6 @@ class CheckNewUserMiddleware(BaseMiddleware):
                     language_code=event.from_user.language_code
                 )
 
-                ## Отправляем событие для рекламы
-                # Получает rb_clickid(clean) по user_id
-                rb_clickid = await redis.get_rb_clickid(user_id=event.from_user.id)
-                # Отправляем событие Registered
-                if rb_clickid: await vk_send_pixel_event(rb_clickid=rb_clickid, goal_name="Registered")
             
         # Вызываем следующий обработчик
         return await handler(event, data)
@@ -303,6 +300,7 @@ class WaitingMiddleware(BaseMiddleware):
 
         if redis is None:
             raise ValueError("Redis instance must be provided in the context data.")
+        
 
         # Проверяем, активен ли запрос пользователя
         is_user_waiting = await redis.is_user_waiting(event.from_user.id)

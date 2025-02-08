@@ -17,6 +17,7 @@ from src.logger import logger
 from src.database import Redis, Database
 from src.aiogram.middlewares.middlewares import WaitingMiddleware 
 from src.aiogram.handlers.system import get_payment_keyboard_markup
+from src.aiogram.utils import vk_send_pixel_event
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -142,4 +143,6 @@ message_effect_id="5104841245755180586",
         is_first_recurring=message.successful_payment.is_first_recurring,
         order_info=message.successful_payment.order_info
     )
+
+    await vk_send_pixel_event(redis=Redis, user_id=message.from_user.id, goal_name="payment")
     
