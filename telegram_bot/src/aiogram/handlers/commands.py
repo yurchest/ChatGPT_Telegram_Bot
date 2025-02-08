@@ -23,9 +23,10 @@ router.message.middleware(WaitingMiddleware())
 @router.message(CommandStart())
 async def start_handler(message: Message, command: CommandObject) -> None:
     await message.answer("Можешь задавать интересующий тебя вопрос")
-    if "vk_ads" in command.args:
+    logger.debug(f"command.args: {command.args}")
+    if command.args is not None:
         utm_parsed: dict = await parse_utm(command.args)
-        logger.debug(f"command.args: {utm_parsed}")
+        logger.debug(f"command.args parsed: {utm_parsed}")
         if "rb_clickid" in utm_parsed:
             await vk_send_pixel_event(rb_clickid=utm_parsed["rb_clickid"], goal_name="Registered")
 

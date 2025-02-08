@@ -379,9 +379,24 @@ sudo apt install php php-cli php-fpm php-mysql libapache2-mod-php
 Создайте файл `redirect.php` в каталоге `/var/www/html/` с следующим содержимым:
 
 ```php
+
 <?php
 // Получаем строку запроса
 $query = $_SERVER['QUERY_STRING'];
+
+// Проверка на мобильное устройство
+function is_mobile() {
+    $user_agent = $_SERVER['HTTP_USER_AGENT'];
+    // Проверяем, содержит ли строка user-agent ключевые слова для мобильных устройств
+    $mobile_devices = ['iphone', 'android', 'blackberry', 'windows phone', 'opera mini', 'mobile', 'ipod'];
+
+    foreach ($mobile_devices as $device) {
+        if (stripos($user_agent, $device) !== false) {
+            return true;
+        }
+    }
+    return false;
+}
 
 // Если параметры есть
 if (!empty($query)) {
@@ -399,14 +414,24 @@ if (!empty($query)) {
     // Формируем новый параметр start
     $start_param = implode('__', $new_params);
 
-    // Редирект на телеграм-бот с параметром start
-    header('Location: https://t.me/yurchest_chatgpt_bot?start=' . $start_param);
+
+    // Проверяем, что запрос с мобильного устройства
+    if (is_mobile()) {
+        // Редиректим на Telegram через мобильное приложение
+        header('Location: tg://resolve?domain=yurchest_chatgpt_bot&start=' . $start_param);
+    } else {
+        // Редиректим на веб-версию Telegram
+        header('Location: https://t.me/yurchest_chatgpt_bot?start=' . $start_param);
+    }
+
     exit();
 } else {
     // Если параметров нет, редиректим на основной URL без параметра start
     header('Location: https://t.me/yurchest_chatgpt_bot');
     exit();
 }
+
+
 ```
 
 ---
