@@ -1,5 +1,5 @@
 from aiogram import Router
-from aiogram.filters import CommandStart, Command
+from aiogram.filters import CommandStart, Command, CommandObject
 from aiogram.types import Message
 from aiogram.enums import ParseMode
 
@@ -8,7 +8,7 @@ from src.logger import logger
 from src.database import Redis, Database
 from src.aiogram.middlewares.middlewares import WaitingMiddleware, CheckNewUserMiddleware
 from src.config import TRIAL_PERIOD_NUM_REQ
-from src.aiogram.utils import commands_text, answer_message
+from src.aiogram.utils import commands_text, answer_message, parse_utm, vk_send_pixel_event
 
 from datetime import datetime
 import re
@@ -21,8 +21,15 @@ router.message.middleware(WaitingMiddleware())
 
 
 @router.message(CommandStart())
-async def start_handler(message: Message) -> None:
+async def start_handler(message: Message, command: CommandObject) -> None:
     await message.answer("Можешь задавать интересующий тебя вопрос")
+    logger.debug(f"command.args: {command.args}")
+    if command.args is not None:
+        utm_parsed: dict = await parse_utm(command.args)
+        logger.debug(f"command.args parsed: {utm_parsed}")
+        if "rb_clickid" in utm_parsed:
+            await vk_send_pixel_event(rb_clickid=utm_parsed["rb_clickid"], goal_name="Registered")
+
 
 @router.message(Command('reset_conversation'))
 async def reset_handler(message: Message, redis: Redis):

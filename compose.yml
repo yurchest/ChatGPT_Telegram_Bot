@@ -74,8 +74,8 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_USER=${REDIS_USER}
       - REDIS_USER_PASSWORD=${REDIS_USER_PASSWORD}
-    # ports: # Не нужно прокидывать порт наружу контейнера
-    #   - "6380:6379" 
+    ports:
+    - "127.0.0.1:6380:6379"  # Прокидываем порт только на локальный интерфейс (127.0.0.1), чтобы Redis был доступен только с VPS
     volumes:
       - redis-data:/var/lib/redis/data
     deploy:

@@ -349,4 +349,188 @@ Now, when you run `git pull`, it will use the SSH key for authentication, and yo
 
 
 
+---
 
+# Настройка редиректа с параметрами для Telegram бота
+
+### 1. Включение модуля `mod_rewrite` в Apache
+
+Для активации модуля переписывания URL и перезапуска Apache, выполните следующие команды:
+
+```bash
+sudo a2enmod rewrite
+sudo systemctl restart apache2
+```
+
+---
+
+### 2. Установка PHP
+
+Установите необходимые пакеты PHP для работы с Apache:
+
+```bash
+sudo apt install php php-cli php-fpm php-mysql libapache2-mod-php
+```
+
+---
+
+### 3. PHP-скрипт для редиректа
+
+Создайте файл `redirect.php` в каталоге `/var/www/html/` с следующим содержимым:
+
+```php
+
+<?php
+// Получаем строку запроса
+$query = $_SERVER['QUERY_STRING'];
+
+// Проверка на мобильное устройство
+function is_mobile() {
+    $user_agent = $_SERVER['HTTP_USER_AGENT'];
+    // Проверяем, содержит ли строка user-agent ключевые слова для мобильных устройств
+    $mobile_devices = ['iphone', 'android', 'blackberry', 'windows phone', 'opera mini', 'mobile', 'ipod'];
+
+    foreach ($mobile_devices as $device) {
+        if (stripos($user_agent, $device) !== false) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Функция для вычисления SHA256 хэша
+function generate_sha256($string) {
+    return hash('sha256', $string);
+}
+
+// Если параметры есть
+if (!empty($query)) {
+    // Преобразуем строку запроса в массив параметров
+    parse_str($query, $params);
+
+    // Массив для хранения новых параметров
+    $new_params = [];
+
+    // Проверяем и добавляем параметр rb_clickid, если он есть
+    if (isset($params['rb_clickid'])) {
+        $rb_clickid = $params['rb_clickid'];
+        $rb_clickid_sha256 = generate_sha256($rb_clickid);
+
+        // Подключаемся к Redis
+        $redis = new Redis();
+        $redis->connect('127.0.0.1', 6380); // Подключение к Redis серверу
+
+        // Сохраняем rb_clickid в Redis с ключом rb_clickid:{SHA256}
+        $redis->set('rb_clickid:' . $rb_clickid_sha256, $rb_clickid);
+
+        // Добавляем в новый массив параметров
+        $new_params[] = 'rb_clickid-' . $rb_clickid_sha256;
+    }
+
+    // Перебираем остальные параметры и преобразуем их в нужный формат
+    foreach ($params as $key => $value) {
+        if ($key !== 'rb_clickid') {
+            $new_params[] = $key . '-' . $value;
+        }
+    }
+
+    // Формируем новый параметр start
+    $start_param = implode('__', $new_params);
+
+    // Проверяем, что запрос с мобильного устройства
+    if (is_mobile()) {
+        // Редиректим на Telegram через мобильное приложение
+        header('Location: tg://resolve?domain=yurchest_chatgpt_bot&start=' . $start_param);
+    } else {
+        // Редиректим на веб-версию Telegram
+        header('Location: https://t.me/yurchest_chatgpt_bot?start=' . $start_param);
+    }
+
+    exit();
+} else {
+    // Если параметров нет, редиректим на основной URL без параметра start
+    header('Location: https://t.me/yurchest_chatgpt_bot');
+    exit();
+}
+
+
+
+```
+
+---
+
+### 4. Настройка `.htaccess`
+
+Создайте или отредактируйте файл `.htaccess` в каталоге `/var/www/html/`, добавив следующее правило переписывания:
+
+```apache
+RewriteEngine On
+RewriteRule ^$ /redirect.php [L]
+```
+
+---
+
+### 5. Настройка Apache для чтения `.htaccess`
+
+Откройте конфигурационный файл Apache `/etc/apache2/apache2.conf` и убедитесь, что для каталога `/var/www/` разрешено использование `.htaccess`:
+
+```apache
+<Directory /var/www/>
+    Options Indexes FollowSymLinks
+    AllowOverride All
+    Require all granted
+</Directory>
+```
+
+---
+
+### 6. Перезапуск Apache
+
+Перезапустите Apache, чтобы применить изменения:
+
+```bash
+sudo systemctl restart apache2
+```
+
+---
+
+Теперь ваш сервер настроен на редирект с параметрами в формате `start=param1-value1__param2-value2`, перенаправляя пользователей на Telegram-бота.
+
+
+
+
+
+
+### 🔹 Установка SSL на Apache с Let's Encrypt  
+
+#### **1️⃣ Установите Certbot и плагин для Apache**  
+```bash
+sudo apt install certbot python3-certbot-apache
+```
+
+#### **2️⃣ Исправление возможных проблем с зависимостями**  
+```bash
+pip uninstall urllib3 requests google-auth google-auth-oauthlib -y
+pip install urllib3 requests google-auth google-auth-oauthlib
+```
+
+#### **3️⃣ Получите SSL-сертификат**  
+```bash
+sudo certbot --apache -d yurchest.ru
+```
+
+#### **4️⃣ Настройка автообновления сертификатов**  
+```bash
+sudo crontab -e
+```
+Добавьте строку:  
+```bash
+0 3 * * * certbot renew --quiet
+```
+
+#### **5️⃣ Перезапустите Apache**  
+```bash
+sudo systemctl restart apache2
+```
+
+Теперь ваш сайт работает через **HTTPS** 🚀
