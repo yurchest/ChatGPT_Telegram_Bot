@@ -418,7 +418,7 @@ if (!empty($query)) {
 
         // Подключаемся к Redis
         $redis = new Redis();
-        $redis->connect('127.0.0.1', 6380); // Подключение к Redis серверу
+	$redis->connect('127.0.0.1', 6380); // Подключение к Redis серверу
 
         // Сохраняем rb_clickid в Redis с ключом rb_clickid:{SHA256}
         $redis->set('rb_clickid:' . $rb_clickid_sha256, $rb_clickid);
@@ -428,11 +428,15 @@ if (!empty($query)) {
     }
 
     // Перебираем остальные параметры и преобразуем их в нужный формат
-    foreach ($params as $key => $value) {
+    /* 
+	  
+	foreach ($params as $key => $value) {
         if ($key !== 'rb_clickid') {
             $new_params[] = $key . '-' . $value;
         }
     }
+     
+    */
 
     // Формируем новый параметр start
     $start_param = implode('__', $new_params);
@@ -440,10 +444,10 @@ if (!empty($query)) {
     // Проверяем, что запрос с мобильного устройства
     if (is_mobile()) {
         // Редиректим на Telegram через мобильное приложение
-        header('Location: tg://resolve?domain=yurchest_chatgpt_bot&start=' . $start_param);
+        header('Location: tg://resolve?domain=yurchest_chatgpt_bot&start=' . $rb_clickid_sha256);
     } else {
         // Редиректим на веб-версию Telegram
-        header('Location: https://t.me/yurchest_chatgpt_bot?start=' . $start_param);
+        header('Location: https://t.me/yurchest_chatgpt_bot?start=' . $rb_clickid_sha256);
     }
 
     exit();
