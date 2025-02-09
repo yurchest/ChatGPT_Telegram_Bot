@@ -33,7 +33,7 @@ async def reset_handler(message: Message, redis: Redis):
 
 
 @router.message(Command('show_dialog'))
-async def reset_handler(message: Message, redis: Redis):
+async def show_dialog_handler(message: Message, redis: Redis):
     history = await redis.get_history(message.from_user.id)
     if not history:
         await message.answer("Диалог пуст")
@@ -42,20 +42,40 @@ async def reset_handler(message: Message, redis: Redis):
         sender = "Неизветно кто"
         if cur_message["role"] == "user":
             sender = "Пользователь"
+
+            mes = ""
+
+            content = cur_message['content']
+
+            for cur_content in content:
+                if "type" in cur_content:
+                    if cur_content["type"] == "text":
+                        mes += f"{cur_content["text"]}\n\n"
+                    if cur_content["type"] == "image_url": 
+                        mes += "_Приложено фото_"
+            
+            await answer_message(
+                md=f"*{sender}*:\n" + mes,
+                message=message,
+            )
+
+
         elif cur_message["role"] == "assistant":
             sender = "Бот"
-        else:
-            sender = "Неизвестно кто"
 
-        await answer_message(
-            md=f"*{sender}*:\n" + cur_message['content'],
-            message=message,
-        )
+            await answer_message(
+                md=f"*{sender}*:\n" + cur_message['content'],
+                message=message,
+            )
+
 
 @router.message(Command('help'))
 async def reset_handler(message: Message, redis: Redis):
     text = "\n".join([
         "🤖 *Этот чат\\-бот работает на OpenAI API*\n",
+        "Поддерживаемые форматы запросов:",
+        "\\- Генерация текста",
+        "\\- Анализ изображения\n",
         "Бот запоминает предыдущие сообщения, чтобы поддерживать связный диалог\\.",
         "Используйте /reset\\_conversation для сброса контекста\\.\n",
         *commands_text,
