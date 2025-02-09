@@ -2,7 +2,7 @@ import openai
 from openai import AsyncOpenAI
 import asyncio
 
-from src.config import OPENAI_API_KEY, ENVIRONMENT, MAX_TOKENS
+from src.config import OPENAI_API_KEY, ENVIRONMENT, MAX_TOKENS, OPENAI_ASSISTANT_ID
 from src.logger import logger
 
 def handle_openai_errors(func):
@@ -33,6 +33,7 @@ class OpenAI_API():
         self = cls()
         await self.check_task  # Дожидаемся завершения задачи
         return self
+    
     
     async def check_connection(self):
         """Проверка соединения с OpenAI API"""
@@ -83,16 +84,46 @@ class OpenAI_API():
         
         return assistent_reply, role, num_in_tokens, num_out_tokens
 
-    @handle_openai_errors
-    async def chatgpt_conversation(self, user_text: str, conversation: list = []):
-        if conversation:
-            conversation.append({'role': 'user', 'content': user_text})
-        else:
-            conversation = [{'role': 'user', 'content': user_text}]
-        response = await self._get_response(conversation)
-        conversation.append({
-            'role': response.choices[0].message.role,
-            'content': response.choices[0].message.content.strip()
-        })
-        return conversation
-    
+    async def get_file_response(self, file_io, user_message):
+        # Загружаем файл в OpenaAI
+        file = await self.client.files.create(file=file_io, purpose="assistants")    
+
+        # Создаем новый поток
+        thread = await self.client.beta.threads.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": user_message,
+                    "attachments": [
+                        {"file_id": file.id, "tools": [{"type": "file_search"}]}
+                    ]
+                }
+            ]
+        )
+
+        run = await self.client.beta.threads.runs.create_and_poll(
+            thread_id=thread.id, 
+            assistant_id=OPENAI_ASSISTANT_ID
+        )
+        # messages = list(self.client.beta.threads.messages.list(thread_id=thread.id, run_id=run.id))
+        messages = [msg async for msg in self.client.beta.threads.messages.list(thread_id=thread.id, run_id=run.id)]
+
+        logger.debug(f"(OpenAI)\t messages_file: {messages}")
+
+        if not messages:
+            return "Ошибка: OpenAI не вернул сообщений"
+
+        message_content = messages[0].content[0].text
+        annotations = message_content.annotations
+
+        for index, annotation in enumerate(annotations):
+            message_content.value = message_content.value.replace(annotation.text, f"[{index}]")
+
+
+        logger.debug(f"(OpenAI)\t message_content_file: {message_content.value}")
+
+        await self.client.files.delete(file.id)
+
+        return message_content.value
+
+
