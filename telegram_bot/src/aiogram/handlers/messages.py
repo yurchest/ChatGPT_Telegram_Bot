@@ -65,7 +65,7 @@ async def message_handler(message: Message, bot: Bot, db : Database, openai: Ope
 
     if message.photo:
 
-        logger.debug(f"photos: {message.photo}")
+        # logger.debug(f"photos: {message.photo}")
 
         # Приписка к изображению, если есть
         if message.caption:
@@ -90,7 +90,7 @@ async def message_handler(message: Message, bot: Bot, db : Database, openai: Ope
     
 
     elif message.text:
-        logger.debug(f"file_bytes: {message.text}")
+        # logger.debug(f"message.text: {message.text}")
         text_content = {
             "type": "text",
             "text": message.text,
@@ -101,6 +101,7 @@ async def message_handler(message: Message, bot: Bot, db : Database, openai: Ope
 
 
     assistant_reply, role, num_in_tokens, num_out_tokens = await openai.get_response(history, user_message)
+    # logger.debug(f"assistant_reply: {assistant_reply[:20]}")
     assistant_message = {'role': role, 'content': assistant_reply}
 
     await redis.append_to_history(
@@ -120,9 +121,10 @@ async def message_handler(message: Message, bot: Bot, db : Database, openai: Ope
             tokens=num_out_tokens
         )
     
-    # # Работает, но это встроено в telegramify-markdown
+    # Работает, но это встроено в telegramify-markdown
     # for message_to_send in split_message(assistant_reply, with_photo=False):
     #     await message.answer(message_to_send, parse_mode=ParseMode.MARKDOWN)
+
 
     await answer_message(
         md=assistant_reply,

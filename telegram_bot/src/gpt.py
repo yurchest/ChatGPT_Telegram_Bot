@@ -68,6 +68,7 @@ class OpenAI_API():
             max_completion_tokens=MAX_TOKENS,
         )
         logger.debug(f"(OpenAI)\t Get response from OpenAI")
+        # logger.debug(f"(OpenAI)\t response: {response}")
 
         # length    - что-то недописал по причине ограничения max_completion_tokens
         # stop      - все дописал
