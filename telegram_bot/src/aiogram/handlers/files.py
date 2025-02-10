@@ -7,7 +7,7 @@ from aiogram.enums import ParseMode
 from src.gpt import OpenAI_API
 from src.database import Redis
 
-from src.aiogram.middlewares.middlewares import (
+from src.aiogram.middlewares import (
     WaitingMiddleware, 
     CheckNewUserMiddleware,
     IncrementRequestsMiddleware,

@@ -2,8 +2,7 @@ from src.config import TELEGRAM_BOT_TOKEN, POSTRGRES_URL, REDIS_PORT, REDIS_HOST
 from src.database import Database, Redis
 from src.gpt import OpenAI_API
 from src.logger import logger
-from src.aiogram.middlewares.middlewares import (
-    ErrorLoggingMiddleware, # Deprecated
+from src.aiogram.middlewares import (
     DatabaseMiddleware, 
     OpenAIMiddleware, 
     RedisMiddleware 

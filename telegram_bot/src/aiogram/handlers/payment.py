@@ -1,5 +1,4 @@
 import json
-import pytz
 
 from aiogram import Router, Bot, F
 from aiogram.enums import ParseMode
@@ -8,14 +7,18 @@ from aiogram.types import (
     Message, 
     LabeledPrice, 
     PreCheckoutQuery, 
-    CallbackQuery, 
-    Message, 
-    )
+    CallbackQuery
+)
 
+from src.config import (
+    YOOKASSA_PAYMENT_TOKEN, 
+    SUBSCRIPTION_PRICE_RUB, 
+    SUBSCRIPTION_DURATION_MONTHS,
+    EMAIL_FOR_BILL
+)
 from src.logger import logger
-
 from src.database import Redis, Database
-from src.aiogram.middlewares.middlewares import WaitingMiddleware 
+from src.aiogram.middlewares import WaitingMiddleware 
 from src.aiogram.handlers.system import get_payment_keyboard_markup
 from src.aiogram.utils import vk_send_pixel_event
 

@@ -75,9 +75,6 @@ class OpenAI_API():
         # length    - что-то недописал по причине ограничения max_completion_tokens
         # stop      - все дописал
         finish_reason: str = response.choices[0].finish_reason 
-
-        logger.debug(f"(OpenAI)\t Finish_reason: {finish_reason}")
-
         role = response.choices[0].message.role
         assistent_reply = response.choices[0].message.content.strip()
         num_in_tokens = response.usage.prompt_tokens
