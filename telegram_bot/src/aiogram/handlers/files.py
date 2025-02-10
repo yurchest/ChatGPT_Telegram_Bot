@@ -42,7 +42,7 @@ router.message.middleware(IncrementRequestsMiddleware())
 
 @router.message(ChatModeFilter(mode="file_analyze"), F.document)
 async def file_handler(message: Message, bot: Bot, openai: OpenAI_API, redis: Redis):
-     # Скачиваем изображение
+    # Скачиваем изображение
     file_IO: BinaryIO = await bot.download(message.document.file_id)
     file_IO.name = message.document.file_name
 
@@ -54,13 +54,27 @@ async def file_handler(message: Message, bot: Bot, openai: OpenAI_API, redis: Re
 
     await message.answer(f"{file_name} успешно загружен.\nЧто желаете узнать?")
 
-@router.message(ChatModeFilter(mode="file_analyze"), F.text)
-async def message_filemode_handler(message: Message, openai: OpenAI_API, redis: Redis):
+@router.message(ChatModeFilter(mode="file_analyze"), F.text | F.photo)
+async def message_filemode_handler(message: Message, bot: Bot, openai: OpenAI_API, redis: Redis):
     thread_id = await redis.get_user_thread_id(message.from_user.id)
 
-    response = await openai.get_thread_response(message.text, thread_id)
+    if message.photo:
+        text = "\n".join([
+            "В данном режиме анализ изображений недоступен\n",
+            "*/usual\\_conversation* \\-  вернуться к обычному диалогу с возможностью анализировать фото",
+        ])
+        await message.answer(text, parse_mode=ParseMode.MARKDOWN_V2)
+        return
 
-    # TODO: добавить исотрию сообщений
+    elif message.text:
+        content = [{
+            "type": "text",
+            "text": message.text,
+        }]
+
+
+    response = await openai.get_thread_response(content, thread_id)
+
 
     await answer_message(
         md=response,
