@@ -167,7 +167,7 @@ async def file_analyze_handler(message: Message, openai: OpenAI_API, redis: Redi
     await redis.set_user_mode(message.from_user.id, "file_analyze")
 
     text = "\n".join([
-        "Ты зашел в режим анализа файлов\n",
+        "Ты зашел в режим анализа документов\n",
         "Для начала пришли мне файл для анализа без подписи\\.",
         "По ходу диалога ты можешь присылать еще файлы для расширения кругозора модели\\.\n"
         "Доступные форматы файлов: `.pdf`, `.pptx`, `.docx`, `.txt` и еще множество",

@@ -81,3 +81,11 @@ async def message_filemode_handler(message: Message, bot: Bot, openai: OpenAI_AP
         message=message
     )
 
+@router.message(ChatModeFilter(mode="usual"), F.document)
+async def not_file_handler(message: Message, bot: Bot):
+    text = "\n".join([
+            "В данном режиме анализ документов недоступен\n",
+            "*/file\\_analyze* \\-  перейти в режим анализа документов",
+        ])
+    await message.answer(text, parse_mode=ParseMode.MARKDOWN_V2)
+        
