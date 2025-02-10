@@ -13,6 +13,8 @@ from src.aiogram.middlewares import (
     IncrementRequestsMiddleware,
     TimingMessageMiddleware,
     WaitingMiddleware,
+    ChatHistoryMiddleware,
+    TokensMiddleware,
 )
 
 from src.aiogram.utils import answer_message, split_message
@@ -26,24 +28,24 @@ router = Router()
 
 router.message.filter(ChatModeFilter(mode="usual"))
 
-# Inner/Outer Middlwares
-router.message.middleware(TimingMessageMiddleware())
 
-# Inner Middlwares
+router.message.middleware(TimingMessageMiddleware())
+router.message.middleware(WaitingMiddleware())
+
 router.message.middleware(CheckNewUserMiddleware())
 router.message.middleware(CheckTrialPeriodMiddleware())
 router.message.middleware(CheckSubscriptionMiddleware())
 
-# Inner/Outer Middlwares
-router.message.middleware(WaitingMiddleware())
 router.message.middleware(CheckHistoryLengthMiddleware())
 
 # Outer Middlwares
 router.message.middleware(IncrementRequestsMiddleware())
+router.message.middleware(TokensMiddleware())
+
+router.message.middleware(ChatHistoryMiddleware())
 
 @router.message(F.text)
-async def message_handler(message: Message, db: Database, openai: OpenAI_API, redis: Redis) -> None:
-    user_id = message.from_user.id
+async def message_handler(message: Message, openai: OpenAI_API, history: list) -> None:
     user_message = {'role': 'user', 'content': []}
 
     # Add the text content of the message to the user message
@@ -52,26 +54,18 @@ async def message_handler(message: Message, db: Database, openai: OpenAI_API, re
         "text": message.text,
     })
 
-    # Get the user's message history from Redis
-    history = await redis.get_history(user_id)
-    
     # Get the assistant's response from OpenAI API
-    assistant_reply, role, num_in_tokens, num_out_tokens = await openai.get_response(history, user_message)
-    assistant_message = {'role': role, 'content': assistant_reply}
-
-    # Append the user and assistant messages to the history in Redis
-    await redis.append_to_history(user_id=user_id, messages=[user_message, assistant_message])
-    
-    # Update the user's token usage in the database
-    await db.add_user_in_out_tokens(user_id, num_in_tokens, num_out_tokens)
+    response: dict = await openai.get_response(history, user_message)
+    assistant_reply = response.get("assistant_reply")
 
     # Send the assistant's reply to the user
     await answer_message(md=assistant_reply, message=message)
 
+    return response
+
 
 @router.message(F.photo)
-async def vision_handler(message: Message, bot: Bot, db: Database, openai: OpenAI_API, redis: Redis) -> None:
-    user_id = message.from_user.id
+async def vision_handler(message: Message, bot: Bot, openai: OpenAI_API, history: list) -> None:
     user_message = {'role': 'user', 'content': []}
 
     # If the photo has a caption, add it to the user message
@@ -86,19 +80,12 @@ async def vision_handler(message: Message, bot: Bot, db: Database, openai: OpenA
         "type": "image_url",
         "image_url": {"url": f"data:image/jpeg;base64,{base64.b64encode(file_bytes).decode('utf-8')}"}
     })
-
-    # Get the user's message history from Redis
-    history = await redis.get_history(user_id)
     
     # Get the assistant's response from OpenAI API
-    assistant_reply, role, num_in_tokens, num_out_tokens = await openai.get_response(history, user_message)
-    assistant_message = {'role': role, 'content': assistant_reply}
-
-    # Append the user and assistant messages to the history in Redis
-    await redis.append_to_history(user_id=user_id, messages=[user_message, assistant_message])
-    
-    # Update the user's token usage in the database
-    await db.add_user_in_out_tokens(user_id, num_in_tokens, num_out_tokens)
+    response: dict = await openai.get_response(history, user_message)
+    assistant_reply = response.get("assistant_reply")
 
     # Send the assistant's reply to the user
     await answer_message(md=assistant_reply, message=message)
+
+    return response

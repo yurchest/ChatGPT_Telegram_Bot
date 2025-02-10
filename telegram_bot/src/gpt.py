@@ -60,27 +60,30 @@ class OpenAI_API():
 
     
     @handle_openai_errors
-    async def get_response(self, conversation_history: list, user_message: dict):
+    async def get_response(self, conversation_history: list, user_message: dict) -> dict:
         """Асинхронный запрос к OpenAI API"""
         api_message = conversation_history + [user_message]
-        # logger.debug(f"(OpenAI)\t API message: {api_message}")
-        response = await self.client.chat.completions.create(
+
+        chat_completion = await self.client.chat.completions.create(
             model=self.model_id,
             messages=api_message,
             max_completion_tokens=MAX_TOKENS,
         )
         logger.debug(f"(OpenAI)\t Get response from OpenAI")
-        # logger.debug(f"(OpenAI)\t response: {response}")
 
         # length    - что-то недописал по причине ограничения max_completion_tokens
         # stop      - все дописал
-        finish_reason: str = response.choices[0].finish_reason 
-        role = response.choices[0].message.role
-        assistent_reply = response.choices[0].message.content.strip()
-        num_in_tokens = response.usage.prompt_tokens
-        num_out_tokens = response.usage.completion_tokens
+
+        response = {
+            "user_message": user_message,
+            "assistant_reply": chat_completion.choices[0].message.content.strip(),
+            "finish_reason": chat_completion.choices[0].finish_reason,
+            "role": chat_completion.choices[0].message.role,
+            "num_in_tokens": chat_completion.usage.prompt_tokens,
+            "num_out_tokens": chat_completion.usage.completion_tokens
+        }
         
-        return assistent_reply, role, num_in_tokens, num_out_tokens
+        return response
     
     @handle_openai_errors
     async def add_file(self, fileIO: BinaryIO) -> str:

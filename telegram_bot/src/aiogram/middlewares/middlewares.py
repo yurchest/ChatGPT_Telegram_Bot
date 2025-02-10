@@ -275,3 +275,53 @@ async def delete_message_when_active(   redis: Redis,
         await asyncio.sleep(0.5)
 
     await tech_message.delete()
+
+
+class ChatHistoryMiddleware(BaseMiddleware):
+    """
+    Middleware to manage chat history in Redis.
+    """
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        if isinstance(event, Message):
+            redis: Redis = data.get("redis")
+            if not redis:
+                raise ValueError("Redis instance must be provided in the context data.")
+            
+            # Get the user's message history from Redis
+            history = await redis.get_history(event.from_user.id)
+            data["history"] = history
+
+            result: dict = await handler(event, data)
+
+            user_message = result.get("user_message")
+            assistant_reply = result.get("assistant_reply")
+            role = result.get("role")
+
+            if user_message and assistant_reply and role:
+                assistant_message = {'role': role, 'content': assistant_reply}
+
+                # Append the user and assistant messages to the history in Redis
+                await redis.append_to_history(user_id=event.from_user.id, messages=[user_message, assistant_message])
+
+            return result
+
+
+
+class TokensMiddleware(BaseMiddleware):
+    """
+    Middleware to manage input/ output tokens in Databse.
+    """
+    async def __call__(self, handler, event: TelegramObject, data: dict):
+        result: dict = await handler(event, data)
+        if isinstance(event, Message):
+            db: Database = data.get("db")
+            if not db:
+                raise ValueError("Database instance must be provided in the context data.")
+            
+            num_in_tokens = result.get("num_in_tokens")
+            num_out_tokens = result.get("num_out_tokens")
+            if num_in_tokens and num_out_tokens:
+                # Update the user's token usage in the database
+                await db.add_user_in_out_tokens(event.from_user.id, num_in_tokens, num_out_tokens)
+            
+        return result

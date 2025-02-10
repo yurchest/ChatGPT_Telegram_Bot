@@ -26,14 +26,13 @@ router = Router()
 
 # Inner/Outer Middlwares
 router.message.middleware(TimingMessageMiddleware())
+router.message.middleware(WaitingMiddleware())
 
 # Inner Middlwares
 router.message.middleware(CheckNewUserMiddleware())
 router.message.middleware(CheckTrialPeriodMiddleware())
 router.message.middleware(CheckSubscriptionMiddleware())
 
-# Inner/Outer Middlwares
-router.message.middleware(WaitingMiddleware())
 # router.message.middleware(CheckHistoryLengthMiddleware())
 
 # Outer Middlwares
