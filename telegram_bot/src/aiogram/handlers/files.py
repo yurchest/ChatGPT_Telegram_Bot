@@ -52,7 +52,7 @@ async def file_handler(message: Message, bot: Bot, openai: OpenAI_API, redis: Re
 
     await openai.add_file_to_vectore_store(vector_store_id, file_id)
 
-    await message.answer(f"{file_name} успешно загружен.\n Что желаете узнать?")
+    await message.answer(f"{file_name} успешно загружен.\nЧто желаете узнать?")
 
 @router.message(ChatModeFilter(mode="file_analyze"), F.text)
 async def message_filemode_handler(message: Message, bot: Bot, openai: OpenAI_API, redis: Redis):
