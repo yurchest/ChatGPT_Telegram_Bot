@@ -82,7 +82,7 @@ async def message_filemode_handler(message: Message, bot: Bot, openai: OpenAI_AP
     )
 
 @router.message(ChatModeFilter(mode="usual"), F.document)
-async def not_file_handler(message: Message, bot: Bot):
+async def not_file_handler(message: Message):
     text = "\n".join([
             "В данном режиме анализ документов недоступен\n",
             "*/file\\_analyze* \\-  перейти в режим анализа документов",

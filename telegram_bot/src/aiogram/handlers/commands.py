@@ -10,6 +10,7 @@ from src.aiogram.middlewares.middlewares import WaitingMiddleware, CheckNewUserM
 from src.config import TRIAL_PERIOD_NUM_REQ
 from src.aiogram.utils import commands_text, answer_message
 from src.gpt import OpenAI_API
+from src.filters import ChatModeFilter
 
 from datetime import datetime
 import re
@@ -26,14 +27,23 @@ async def start_handler(message: Message, command: CommandObject, redis: Redis, 
     await message.answer("Можешь задавать интересующий тебя вопрос")
     
 
-@router.message(Command('reset_conversation'))
+@router.message(Command('reset_conversation'), ChatModeFilter(mode="usual"))
 async def reset_handler(message: Message, redis: Redis):
     await redis.clear_user_history(message.from_user.id)
     await redis.set_user_req_inactive(message.from_user.id)
     await message.answer("Диалог сброшен")
 
+@router.message(Command('reset_conversation'), ChatModeFilter(mode="file_analyze"))
+async def reset_handler(message: Message):
+    text = "\n".join([
+            "В данном режиме сброс истории недоступен\n",
+            "*/usual\\_conversation* \\-  сбросить историю анализа документов и вернуться к обычному диалогу",
+        ])
+    await message.answer(text, parse_mode=ParseMode.MARKDOWN_V2)
 
-@router.message(Command('show_dialog'))
+
+
+@router.message(Command('show_dialog'), ChatModeFilter(mode="usual"))
 async def show_dialog_handler(message: Message, redis: Redis):
     history = await redis.get_history(message.from_user.id)
     if not history:
@@ -69,11 +79,19 @@ async def show_dialog_handler(message: Message, redis: Redis):
                 message=message,
             )
 
+@router.message(Command('show_dialog'), ChatModeFilter(mode="file_analyze"))
+async def show_dialog_handler(message: Message):
+    text = "\n".join([
+            "В данном режиме показ истории недоступен\n",
+            "*/usual\\_conversation* \\-  сбросить историю анализа документов и вернуться к обычному диалогу",
+        ])
+    await message.answer(text, parse_mode=ParseMode.MARKDOWN_V2)
 
 @router.message(Command('help'))
-async def reset_handler(message: Message, redis: Redis):
+async def reset_handler(message: Message, openai: OpenAI_API):
     text = "\n".join([
         "🤖 *Этот чат\\-бот взаимодействует с OpenAI API*\n",
+        f"Используемая модель: `{openai.model_id}`\n",
         "Поддерживаемые форматы запросов:",
         "\\- Генерация текста",
         "\\- Анализ изображения",
