@@ -183,53 +183,57 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
 
     
 
-
 class CheckHistoryLengthMiddleware(BaseMiddleware):
+    """
+    Middleware to check the length of the message history for a user and enforce limits.
+
+    Methods:
+    --------
+    is_history_length_out(message: Message, history_mes_count: int, limit: int) -> bool:
+        Checks if the message history length exceeds the specified limit and sends a warning message if it does.
+
+    __call__(handler, event: TelegramObject, data: dict):
+        Main middleware method that checks the user's message history length, enforces limits, and handles responses.
+    
+    Raises:
+    -------
+    ValueError:
+        If Redis and Database instances are not provided in the context data.
+    """
 
     async def is_history_length_out(self, message: Message, history_mes_count, limit):
         if history_mes_count >= limit:
-            # Закончился лимит истории
-            tech_message = await message.answer(
+            await message.answer(
                 f"*💬 Превышен лимит истории в {limit} сообщений\\.*\n\n"
                 "🔹 Используйте команду */reset\\_conversation*, чтобы сбросить диалог и начать общение с чиcтого листа\\.\n"
                 "🔹 */help* \\- помощь\n",
                 parse_mode=ParseMode.MARKDOWN_V2
             )
             return True
-        else:
-            return False
-
+        return False
 
     async def __call__(self, handler, event: TelegramObject, data: dict):
-        # Получаем объект базы данных из контекста
         redis: Redis = data.get("redis")
         db: Database = data.get("db")
 
-        if redis is None:
-            raise ValueError("Redis instance must be provided in the context data.")
-        if db is None:
-            raise ValueError("Database instance must be provided in the context data.")
+        if not redis or not db:
+            raise ValueError("Redis and Database instances must be provided in the context data.")
 
-        history: list[dict] = await redis.get_history(event.from_user.id)
-        history_mes_count = len(history) // 2  # Целочисленное деление
+        history = await redis.get_history(event.from_user.id)
+        history_mes_count = len(history) // 2
 
         is_sub_active = await db.is_subscription_active(event.from_user.id)
-        if is_sub_active:
-            max_history = MAX_HISTORY_LENGTH_PAID
-        else:
-            max_history = MAX_HISTORY_LENGTH_TRIAL
+        max_history = MAX_HISTORY_LENGTH_PAID if is_sub_active else MAX_HISTORY_LENGTH_TRIAL
 
-        if await self.is_history_length_out(event, history_mes_count, max_history): return
+        if await self.is_history_length_out(event, history_mes_count, max_history):
+            return
 
-        # Вызываем следующий обработчик        
         result = await handler(event, data)
-
         history_mes_count += 1
-        
+
         if history_mes_count >= max_history:
-            # Закончился лимит истории
             if is_sub_active:
-                tech_message = await event.answer(
+                await event.answer(
                     f"*💬 Превышен лимит истории в `{max_history}` сообщений\\.*\n\n"
                     "🔹 Используйте команду */reset\\_conversation*, чтобы сбросить диалог и начать общение с чиcтого листа\\.\n"
                     "🔹 */help* \\- помощь\n",
@@ -247,23 +251,13 @@ class CheckHistoryLengthMiddleware(BaseMiddleware):
 
         remain_messages = max_history - history_mes_count
 
-        if remain_messages != 0 and \
-            history_mes_count > 10 and \
-            history_mes_count / max_history > 0.6  and \
-            history_mes_count % 5 == 0 and \
-            history_mes_count != 0:
-            # Если кол-во сообщений близится к пределу И количество сообщений кратно 5 (каждые 5 сообщений)
-            # Напоминалка, что можно сбросить диалог
-            
-            # logger.debug(f"remain_messages: {remain_messages}")
-
+        if remain_messages and history_mes_count > 10 and history_mes_count / max_history > 0.6 and history_mes_count % 5 == 0:
             tech_message = await event.answer(
                 f"*💬 У вас осталось `{remain_messages}/{max_history}` сообщений до сброса диалога\\.\\.\\.*\n\n"
                 "🔹 Если сменили тему, используйте команду */reset\\_conversation*, чтобы начать с чистого листа\\.\n"
                 "🔹 Это ускорит время ответа и улучшит понимание контекста\\. ⏳",
                 parse_mode=ParseMode.MARKDOWN_V2
             )
-            # Создаем задачу на удаление сообщения
             asyncio.create_task(delete_message_when_active(redis, event.from_user.id, tech_message))
 
         return result

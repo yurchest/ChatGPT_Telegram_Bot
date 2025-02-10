@@ -42,7 +42,7 @@ router.message.middleware(CheckHistoryLengthMiddleware())
 router.message.middleware(IncrementRequestsMiddleware())
 
 @router.message(F.text)
-async def message_handler(message: Message, bot: Bot, db: Database, openai: OpenAI_API, redis: Redis) -> None:
+async def message_handler(message: Message, db: Database, openai: OpenAI_API, redis: Redis) -> None:
     user_id = message.from_user.id
     user_message = {'role': 'user', 'content': []}
 
