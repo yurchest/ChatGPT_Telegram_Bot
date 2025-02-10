@@ -174,7 +174,7 @@ async def file_analyze_handler(message: Message, openai: OpenAI_API, redis: Redi
     await redis.set_user_mode(message.from_user.id, "usual")
 
     thread_id = await redis.get_user_thread_id(message.from_user.id)
-    await openai.delete_all_file_data(thread_id)
+    if thread_id: await openai.delete_all_file_data(thread_id)
 
     await redis.delete_user_thread_id(message.from_user.id)
     await redis.delete_user_vector_store_id(message.from_user.id)
