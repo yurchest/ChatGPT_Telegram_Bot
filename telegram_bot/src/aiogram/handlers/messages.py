@@ -23,11 +23,14 @@ from src.gpt import OpenAI_API
 from src.database import Redis
 
 from src.aiogram.utils import answer_message, vk_send_pixel_event
+from src.filters import ChatModeFilter
 
 import base64
 
 
 router = Router()
+
+router.message.filter(ChatModeFilter(mode="usual"))
 
 # Inner/Outer Middlwares
 router.message.middleware(TimingMessageMiddleware())

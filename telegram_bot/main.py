@@ -9,7 +9,7 @@ from src.aiogram.middlewares.middlewares import (
     RedisMiddleware 
     )
 from src.aiogram.handlers.system import on_startup, on_shutdown, init_error_handler
-from src.aiogram.handlers import messages, commands, errors, payment, unknown
+from src.aiogram.handlers import messages, commands, errors, payment, unknown, files
 
 from aiogram.methods import DeleteWebhook
 from aiogram import Bot, Dispatcher
@@ -39,6 +39,7 @@ async def main() -> None:
         payment.router,
         commands.router,
         messages.router, 
+        files.router,
         unknown.router,
         errors.router,  
         )

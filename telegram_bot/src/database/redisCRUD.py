@@ -38,6 +38,25 @@ class Redis:
         logger.info(f"(Redis)\t Redis connection closed")
 
     @handle_redis_errors
+    async def set_user_mode(self, user_id: int, mode: str):
+        """Установка режима пользователя (usual, file_analyze)"""
+        seconds = 1 * 24 * 60 * 60 # 1 день
+        await self.redis.set(f"user_mode:{user_id}", value=mode, ex=seconds)
+        logger.debug(f"(Redis)\t User {user_id} mode set to `{mode}`")
+
+    @handle_redis_errors
+    async def get_user_mode(self, user_id: int):
+        """Получениe режима пользователя (usual, file_analyze) с установкой значения по умолчанию"""
+        mode = await self.redis.get(f"user_mode:{user_id}")
+
+        if mode is None:
+            mode = "usual"
+            await self.set_user_mode(user_id, mode)
+
+        return mode
+
+
+    @handle_redis_errors
     async def get_history(self, user_id):
         """Получить историю сообщений для пользователя"""
         history = await self.redis.lrange(f"history:{user_id}", 0, -1)
@@ -121,5 +140,35 @@ class Redis:
         # Обновляем rb_clickid для конкретного пользователя
         await self.redis.set(f"rb_clickid:{user_id}", rb_clickid)
         logger.debug(f"(Redis)\t updated rb_clickid for user {user_id}")
+
+    @handle_redis_errors
+    async def set_user_vector_store_id(self, user_id: int, vecore_store_id):
+        await self.redis.set(f"vectore_store_id:{user_id}", value=vecore_store_id)
+        logger.debug(f"(Redis)\t Addes vectore_store_id `{vecore_store_id}` for `{user_id}`")
+
+    @handle_redis_errors
+    async def get_user_vector_store_id(self, user_id: int):
+        vectore_store_id = await self.redis.get(f"vectore_store_id:{user_id}")
+        return vectore_store_id
+    
+    @handle_redis_errors
+    async def delete_user_vector_store_id(self, user_id: int):
+        await self.redis.delete(f"vectore_store_id:{user_id}")
+        logger.debug(f"(Redis)\t Deleted vectore_store_id for `{user_id}`")
+
+    @handle_redis_errors
+    async def set_user_thread_id(self, user_id: int, thread_id):
+        await self.redis.set(f"thread_id:{user_id}", value=thread_id)
+        logger.debug(f"(Redis)\t Addes thread_id `{thread_id}` for `{user_id}`")
+
+    @handle_redis_errors
+    async def get_user_thread_id(self, user_id: int):
+        vectore_store_id = await self.redis.get(f"thread_id:{user_id}")
+        return vectore_store_id
+    
+    @handle_redis_errors
+    async def delete_user_thread_id(self, user_id: int):
+        await self.redis.delete(f"thread_id:{user_id}")
+        logger.debug(f"(Redis)\t Deleted thread_id for `{user_id}`")
 
         

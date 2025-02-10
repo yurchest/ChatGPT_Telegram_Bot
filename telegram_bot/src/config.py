@@ -24,7 +24,7 @@ else:
     MAX_TOKENS = int(os.getenv("MAX_TOKENS_DEV"))
     VK_PIXEL_ID = int(os.getenv("VK_PIXEL_ID_TEST"))
 
-
+OPENAI_ASSISTANT_ID=os.getenv("OPENAI_ASSISTANT_ID")
 
 POSTGRES_USER = os.getenv("POSTGRES_USER")
 POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD")
