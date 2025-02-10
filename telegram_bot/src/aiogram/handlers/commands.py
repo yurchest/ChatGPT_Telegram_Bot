@@ -178,7 +178,7 @@ async def file_analyze_handler(message: Message, openai: OpenAI_API, redis: Redi
     await message.answer(text, parse_mode=ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
 
 @router.message(Command("usual_conversation")) 
-async def file_analyze_handler(message: Message, openai: OpenAI_API, redis: Redis):
+async def usual_conversation_handler(message: Message, openai: OpenAI_API, redis: Redis):
     user_mode = await redis.get_user_mode(message.from_user.id)
     if user_mode == "usual":
         await message.answer(

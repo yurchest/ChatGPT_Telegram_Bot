@@ -113,7 +113,7 @@ class OpenAI_API():
 
         
     @handle_openai_errors
-    async def add_file_to_vectore_store(self, vector_store_id: str, file_id: str) -> str:
+    async def add_file_to_vector_store(self, vector_store_id: str, file_id: str) -> str:
         """Добавление файла в vector_store"""
         file =  await self.client.beta.vector_stores.files.create_and_poll(
             vector_store_id=vector_store_id,
