@@ -6,5 +6,5 @@ commands_text = [
     " */profile* \\- профиль",
     " */help* \\- помощь", 
     " */usual\\_conversation* \\- обычный диалог", 
-    " */file\\_analyze* \\- анализ файлов", 
+    " */file\\_analyze* \\- анализ файлов\n", 
 ]

@@ -73,10 +73,11 @@ async def show_dialog_handler(message: Message, redis: Redis):
 @router.message(Command('help'))
 async def reset_handler(message: Message, redis: Redis):
     text = "\n".join([
-        "🤖 *Этот чат\\-бот работает на OpenAI API*\n",
+        "🤖 *Этот чат\\-бот взаимодействует с OpenAI API*\n",
         "Поддерживаемые форматы запросов:",
         "\\- Генерация текста",
-        "\\- Анализ изображения\n",
+        "\\- Анализ изображения",
+        "\\- *Анализ файлов*\n",
         "Бот запоминает предыдущие сообщения, чтобы поддерживать связный диалог\\.",
         "Используйте /reset\\_conversation для сброса контекста\\.\n",
         *commands_text,
@@ -141,7 +142,15 @@ async def profile_handler(message: Message, db: Database):
 
 @router.message(Command("file_analyze")) 
 async def file_analyze_handler(message: Message, openai: OpenAI_API, redis: Redis):
-    
+
+    user_mode = await redis.get_user_mode(message.from_user.id)
+    if user_mode == "file_analyze":
+        await message.answer(
+            "Ты уже в режиме `file_analyze`",
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
+        return
+
     vector_store_id = await redis.get_user_vector_store_id(message.from_user.id)
     thread_id = await redis.get_user_thread_id(message.from_user.id)
 
@@ -170,7 +179,14 @@ async def file_analyze_handler(message: Message, openai: OpenAI_API, redis: Redi
 
 @router.message(Command("usual_conversation")) 
 async def file_analyze_handler(message: Message, openai: OpenAI_API, redis: Redis):
-
+    user_mode = await redis.get_user_mode(message.from_user.id)
+    if user_mode == "usual":
+        await message.answer(
+            "Ты уже в режиме `usual_conversation`",
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
+        return
+    
     await redis.set_user_mode(message.from_user.id, "usual")
 
     thread_id = await redis.get_user_thread_id(message.from_user.id)
