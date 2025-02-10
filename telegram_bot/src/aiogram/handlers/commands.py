@@ -10,13 +10,15 @@ from src.aiogram.middlewares import WaitingMiddleware, CheckNewUserMiddleware
 from src.config import TRIAL_PERIOD_NUM_REQ
 from src.aiogram.utils import commands_text, answer_message
 from src.gpt import OpenAI_API
-from src.filters import ChatModeFilter
+from src.filters import ChatModeFilter, ChatTypeFilter
 
 from datetime import datetime
 import re
 
 
 router = Router()
+
+router.message.filter(ChatTypeFilter(chat_type=["private"]))
 
 router.message.middleware(CheckNewUserMiddleware())
 router.message.middleware(WaitingMiddleware())
@@ -208,6 +210,10 @@ async def usual_conversation_handler(message: Message, openai: OpenAI_API, redis
     await redis.delete_user_vector_store_id(message.from_user.id)
 
     await message.answer("Установлен обычный режим. Можете продолжить переписку.")
+
+@router.message(Command("ask"))
+async def ask_handler(message: Message, openai: OpenAI_API):
+    await message.answer("Команду /ask можно использовать только в групповых чатах.")
 
 
 # Хэндлер для неизвестных команд

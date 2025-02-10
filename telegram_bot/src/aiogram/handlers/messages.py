@@ -19,13 +19,14 @@ from src.aiogram.middlewares import (
 
 from src.aiogram.utils import answer_message, split_message
 from src.database import Database, Redis
-from src.filters import ChatModeFilter
+from src.filters import ChatModeFilter, ChatTypeFilter
 from src.gpt import OpenAI_API
 from src.logger import logger
 
 
 router = Router()
 
+router.message.filter(ChatTypeFilter(chat_type=["private"]))
 router.message.filter(ChatModeFilter(mode="usual"))
 
 

@@ -8,7 +8,7 @@ from src.aiogram.middlewares import (
     RedisMiddleware 
     )
 from src.aiogram.handlers.system import on_startup, on_shutdown, init_error_handler
-from src.aiogram.handlers import messages, commands, errors, payment, unknown, files
+from src.aiogram.handlers import messages, commands, errors, payment, unknown, files, group
 
 from aiogram.methods import DeleteWebhook
 from aiogram import Bot, Dispatcher
@@ -35,6 +35,7 @@ async def main() -> None:
     bot = Bot(token=TELEGRAM_BOT_TOKEN)
     dp = Dispatcher()
     dp.include_routers(
+        group.router,
         payment.router,
         commands.router,
         messages.router, 

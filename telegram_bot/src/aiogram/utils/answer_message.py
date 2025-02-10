@@ -62,3 +62,27 @@ async def answer_message(md: str, message: Message):
         except Exception as e:
             logger.error(f"telegramify_markdown Error: {e}")
             raise e
+        
+async def reply_message(md: str, message: Message):
+    boxs = await telegramify_markdown.telegramify(
+        content=md,
+        interpreters_use=[BaseInterpreter(), MermaidInterpreter(session=None)],  # Render mermaid diagram
+        latex_escape=True,
+        normalize_whitespace=True,
+        max_word_count=4090  # The maximum number of words in a single message.
+    )
+    for item in boxs:
+        """
+        Telegram имеет ограничения на количество сообщений, отправляемых за короткий промежуток времени. 
+        Если сервер медленный, он может не успеть обработать несколько сообщений до того, как Telegram ограничит отправку.
+        """
+        await asyncio.sleep(0.5)
+        try:
+            if item.content_type == ContentTypes.TEXT:
+                await message.reply(
+                    item.content,
+                    parse_mode=ParseMode.MARKDOWN_V2
+                )
+        except Exception as e:
+            logger.error(f"telegramify_markdown Error: {e}")
+            raise e

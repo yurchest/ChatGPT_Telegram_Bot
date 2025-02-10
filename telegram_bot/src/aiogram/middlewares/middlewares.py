@@ -26,8 +26,6 @@ from src.aiogram.utils import commands_text, is_sha256, vk_send_pixel_event
 from src.logger import logger
 
     
-    
-    
 class CheckNewUserMiddleware(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
         if isinstance(event, Message):

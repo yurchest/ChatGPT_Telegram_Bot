@@ -21,6 +21,7 @@ from src.database import Redis, Database
 from src.aiogram.middlewares import WaitingMiddleware 
 from src.aiogram.handlers.system import get_payment_keyboard_markup
 from src.aiogram.utils import vk_send_pixel_event
+from src.filters import ChatTypeFilter, ChatModeFilter
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -35,6 +36,8 @@ from src.config import (
 
 
 router = Router()
+
+router.message.filter(ChatTypeFilter(chat_type=["private"]))
 
 router.message.middleware(WaitingMiddleware())
 

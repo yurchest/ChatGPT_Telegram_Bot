@@ -18,11 +18,14 @@ from src.aiogram.middlewares import (
     )
 
 from src.logger import logger
-from src.filters import ChatModeFilter
+from src.filters import ChatModeFilter, ChatTypeFilter
 
 from src.aiogram.utils import answer_message
 
 router = Router()
+
+
+router.message.filter(ChatTypeFilter(chat_type=["private"]))
 
 # Inner/Outer Middlwares
 router.message.middleware(TimingMessageMiddleware())
