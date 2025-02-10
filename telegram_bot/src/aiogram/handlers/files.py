@@ -7,7 +7,7 @@ from aiogram.enums import ParseMode
 from src.gpt import OpenAI_API
 from src.database import Redis
 
-from src.aiogram.middlewares.middlewares import (
+from src.aiogram.middlewares import (
     WaitingMiddleware, 
     CheckNewUserMiddleware,
     IncrementRequestsMiddleware,
@@ -18,22 +18,24 @@ from src.aiogram.middlewares.middlewares import (
     )
 
 from src.logger import logger
-from src.filters import ChatModeFilter
+from src.filters import ChatModeFilter, ChatTypeFilter
 
 from src.aiogram.utils import answer_message
 
 router = Router()
 
+
+router.message.filter(ChatTypeFilter(chat_type=["private"]))
+
 # Inner/Outer Middlwares
 router.message.middleware(TimingMessageMiddleware())
+router.message.middleware(WaitingMiddleware())
 
 # Inner Middlwares
 router.message.middleware(CheckNewUserMiddleware())
 router.message.middleware(CheckTrialPeriodMiddleware())
 router.message.middleware(CheckSubscriptionMiddleware())
 
-# Inner/Outer Middlwares
-router.message.middleware(WaitingMiddleware())
 # router.message.middleware(CheckHistoryLengthMiddleware())
 
 # Outer Middlwares

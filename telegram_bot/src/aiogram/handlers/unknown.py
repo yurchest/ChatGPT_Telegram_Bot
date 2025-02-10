@@ -1,12 +1,12 @@
-from aiogram import Router, F
-from aiogram.types import Message, ContentType
+from aiogram import Router
+from aiogram.types import Message
 
-from src.aiogram.middlewares.middlewares import WaitingMiddleware, CheckNewUserMiddleware
-
-from src.logger import logger
-
+from src.aiogram.middlewares import WaitingMiddleware, CheckNewUserMiddleware
+from src.filters import ChatTypeFilter
 
 router = Router()
+
+router.message.filter(ChatTypeFilter(chat_type=["private"]))
 
 router.message.middleware(CheckNewUserMiddleware())
 router.message.middleware(WaitingMiddleware())

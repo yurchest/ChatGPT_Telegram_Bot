@@ -2,14 +2,13 @@ from src.config import TELEGRAM_BOT_TOKEN, POSTRGRES_URL, REDIS_PORT, REDIS_HOST
 from src.database import Database, Redis
 from src.gpt import OpenAI_API
 from src.logger import logger
-from src.aiogram.middlewares.middlewares import (
-    ErrorLoggingMiddleware, # Deprecated
+from src.aiogram.middlewares import (
     DatabaseMiddleware, 
     OpenAIMiddleware, 
     RedisMiddleware 
     )
 from src.aiogram.handlers.system import on_startup, on_shutdown, init_error_handler
-from src.aiogram.handlers import messages, commands, errors, payment, unknown, files
+from src.aiogram.handlers import messages, commands, errors, payment, unknown, files, group
 
 from aiogram.methods import DeleteWebhook
 from aiogram import Bot, Dispatcher
@@ -36,6 +35,7 @@ async def main() -> None:
     bot = Bot(token=TELEGRAM_BOT_TOKEN)
     dp = Dispatcher()
     dp.include_routers(
+        group.router,
         payment.router,
         commands.router,
         messages.router, 

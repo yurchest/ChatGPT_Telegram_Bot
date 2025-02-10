@@ -157,6 +157,16 @@ class Database:
                 logger.debug(f"(POSTGRE)\t User {telegram_id} output tokens ({tokens}) added")
     
     @handle_db_errors
+    async def add_user_in_out_tokens(self, telegram_id: int, in_tokens: int, out_tokens:int):
+        """Добавить входные и выходные токены пользователю."""
+        async with self.SessionLocal() as session:
+            async with session.begin():
+                user = await session.get(User, telegram_id)
+                user.num_input_tokens += in_tokens
+                user.num_output_tokens += out_tokens
+                logger.debug(f"(POSTGRE)\t User {telegram_id} input tokens ({in_tokens}) and output tokens ({out_tokens}) added")
+    
+    @handle_db_errors
     async def update_last_req_date(self, telegram_id: int):
         """Обновляет last_req_date для пользователя с указанным telegram_id."""
         async with self.SessionLocal() as session:
