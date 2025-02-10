@@ -5,6 +5,7 @@ from aiogram.types import Message
 from aiogram.enums import ParseMode
 
 from src.gpt import OpenAI_API
+from src.database import Redis
 
 from src.aiogram.middlewares.middlewares import (
     WaitingMiddleware, 
@@ -17,7 +18,9 @@ from src.aiogram.middlewares.middlewares import (
     )
 
 from src.logger import logger
+from src.filters import ChatModeFilter
 
+from src.aiogram.utils import answer_message
 
 router = Router()
 
@@ -37,27 +40,30 @@ router.message.middleware(CheckHistoryLengthMiddleware())
 router.message.middleware(IncrementRequestsMiddleware())
 
 
-@router.message(F.document)
-async def file_handler(message: Message, bot: Bot, openai: OpenAI_API):
-    logger.debug(f"message.document: {message.document}")
-
-    logger.debug(f"message.caption: {message.caption}")
-
-    logger.debug(f"message.text: {message.text}")
-
-    # Путь к файлу (например, временная папка, куда загружен файл)
-    # file_path = f"temp_files/{message.from_user.id}/{message.document.file_name}"
-    # # Скачиваем файл на сервер
-    # await message.document.download(file_path)
-
-    
-    # Скачиваем изображение
+@router.message(ChatModeFilter(mode="file_analyze"), F.document)
+async def file_handler(message: Message, bot: Bot, openai: OpenAI_API, redis: Redis):
+     # Скачиваем изображение
     file_IO: BinaryIO = await bot.download(message.document.file_id)
     file_IO.name = message.document.file_name
 
-    # Обрабатываем сообщение
-    user_message = "Какая информация в этом документе?" # TODO
+    file_name, file_id = await openai.add_file(file_IO)
 
-    response = await openai.get_file_response(file_IO, user_message)
+    vector_store_id: str = await redis.get_user_vector_store_id(message.from_user.id)
 
-    await message.answer(response)
+    await openai.add_file_to_vectore_store(vector_store_id, file_id)
+
+    await message.answer(f"Файл {file_name} успешно загружен. Что желаете узнать?")
+
+@router.message(ChatModeFilter(mode="file_analyze"), F.text)
+async def message_filemode_handler(message: Message, bot: Bot, openai: OpenAI_API, redis: Redis):
+    thread_id = await redis.get_user_thread_id(message.from_user.id)
+
+    response = await openai.get_thread_response(message.text, thread_id)
+
+    # TODO: добавить исотрию сообщений
+
+    await answer_message(
+        md=response,
+        message=message
+    )
+

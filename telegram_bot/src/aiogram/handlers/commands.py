@@ -9,6 +9,7 @@ from src.database import Redis, Database
 from src.aiogram.middlewares.middlewares import WaitingMiddleware, CheckNewUserMiddleware
 from src.config import TRIAL_PERIOD_NUM_REQ
 from src.aiogram.utils import commands_text, answer_message
+from src.gpt import OpenAI_API
 
 from datetime import datetime
 import re
@@ -136,6 +137,49 @@ async def profile_handler(message: Message, db: Database):
 
     
     await message.answer("\n".join(profile_text), parse_mode=ParseMode.MARKDOWN_V2)
+
+
+@router.message(Command("file_analyze")) 
+async def file_analyze_handler(message: Message, openai: OpenAI_API, redis: Redis):
+    
+    vector_store_id = await redis.get_user_vector_store_id(message.from_user.id)
+    thread_id = await redis.get_user_thread_id(message.from_user.id)
+
+    if vector_store_id is None or thread_id is None:
+
+        vector_store_id = await openai.create_vector_store_to_user(message.from_user.id)
+        await redis.set_user_vector_store_id(message.from_user.id, vector_store_id)
+
+        thread_id: str = await openai.create_thread_for_user(vector_store_id)
+        await redis.set_user_thread_id(message.from_user.id, thread_id)
+
+
+
+    await redis.set_user_mode(message.from_user.id, "file_analyze")
+
+    text = "\n".join([
+        "Ты зашел в режим анализа файлов\n",
+        "Для начала пришли мне файл для анализа\\.",
+        "По ходу диалога ты можешь присылать еще файлы для расширения крогозора модели\\.\n"
+        "Доступные форматы файлов: `.pdf`, `.pptx`, `.docx`, `.txt` и еще множество",
+        "[Все поддерживаемые форматы](https://platform.openai.com/docs/assistants/tools/file-search#supported-files)\n",
+        "*/usual\\_conversation* \\-  вернуться к обычному диалогу",
+    ]) 
+
+    await message.answer(text, parse_mode=ParseMode.MARKDOWN_V2, disable_web_page_preview=True)
+
+@router.message(Command("usual_conversation")) 
+async def file_analyze_handler(message: Message, openai: OpenAI_API, redis: Redis):
+
+    await redis.set_user_mode(message.from_user.id, "usual")
+
+    thread_id = await redis.get_user_thread_id(message.from_user.id)
+    await openai.delete_all_file_data(thread_id)
+
+    await redis.delete_user_thread_id(message.from_user.id)
+    await redis.delete_user_vector_store_id(message.from_user.id)
+
+    await message.answer("Установлен обычный режим. Можете продолжить переписку.")
 
 
 # Хэндлер для неизвестных команд
