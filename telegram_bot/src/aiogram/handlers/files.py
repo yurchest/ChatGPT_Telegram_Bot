@@ -34,7 +34,7 @@ router.message.middleware(CheckSubscriptionMiddleware())
 
 # Inner/Outer Middlwares
 router.message.middleware(WaitingMiddleware())
-router.message.middleware(CheckHistoryLengthMiddleware())
+# router.message.middleware(CheckHistoryLengthMiddleware())
 
 # Outer Middlwares
 router.message.middleware(IncrementRequestsMiddleware())
