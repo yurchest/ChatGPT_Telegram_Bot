@@ -94,7 +94,10 @@ class CheckNewUserMiddleware(BaseMiddleware):
 
 class IncrementRequestsMiddleware(BaseMiddleware):
     async def __call__(self, handler, event: TelegramObject, data: dict):
+        
         result = await handler(event, data)
+        if not result: return
+
         if isinstance(event, Message):
             # Получаем объект базы данных из контекста
             db = data.get("db")
@@ -307,6 +310,7 @@ class ChatHistoryMiddleware(BaseMiddleware):
             data["history"] = history
 
             result: dict = await handler(event, data)
+            if not result: return
 
             user_message = result.get("user_message")
             assistant_reply = result.get("assistant_reply")
@@ -328,6 +332,8 @@ class TokensMiddleware(BaseMiddleware):
     """
     async def __call__(self, handler, event: TelegramObject, data: dict):
         result: dict = await handler(event, data)
+        if not result: return
+
         if isinstance(event, Message):
             db: Database = data.get("db")
             if not db:
