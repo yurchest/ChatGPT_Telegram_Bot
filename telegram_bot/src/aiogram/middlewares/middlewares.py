@@ -9,6 +9,7 @@ from aiogram.types import (
     Message,
     )
 from aiogram.enums import ParseMode
+from aiogram.exceptions import TelegramForbiddenError
 
 from src.database import Database
 from src.gpt import OpenAI_API
@@ -69,8 +70,13 @@ class CheckNewUserMiddleware(BaseMiddleware):
                     *commands_text,
                     "Начнем? 😊🚀"
                 ])
-                                
-                await event.answer(text, parse_mode=ParseMode.MARKDOWN_V2)
+                
+                bot: Bot = data["bot"]
+                try:
+                    await bot.send_message(chat_id=event.from_user.id, text=text, parse_mode=ParseMode.MARKDOWN_V2)
+                except TelegramForbiddenError as e:
+                    logger.warning(f"User blocked bot: {e}")
+                # await event.answer(text, parse_mode=ParseMode.MARKDOWN_V2)
 
                 await vk_send_pixel_event(redis=redis, user_id=event.from_user.id, goal_name="registered", cost=1)
 
@@ -126,17 +132,23 @@ class CheckTrialPeriodMiddleware(BaseMiddleware):
                 raise ValueError("Database instance must be provided in the context data.")
             if redis is None:
                 raise ValueError("Redis instance must be provided in the context data.")
+            
+            bot: Bot = data["bot"]
 
             # Проверяем, подписан ли пользователь
             is_subscription_active = await db.is_subscription_active(event.from_user.id)
 
             if not is_subscription_active and not await db.is_user_trial(event.from_user.id):
                 # Если пользователь не подписан и тестовый период закончился, отправляем сообщение о подписке
-                await event.answer(
-                    f"Ваш пробный период ({TRIAL_PERIOD_NUM_REQ} запросов) закончился. "
-                    "Для продолжения использования сервиса, пожалуйста, подпишитесь.",
-                    reply_markup=get_payment_keyboard_markup()
-                )
+                try:
+                    await bot.send_message(
+                        chat_id=event.from_user.id,
+                        text=f"Ваш пробный период ({TRIAL_PERIOD_NUM_REQ} запросов) закончился. "
+                        "Для продолжения использования сервиса, пожалуйста, подпишитесь.",
+                        reply_markup=get_payment_keyboard_markup()
+                    )
+                except TelegramForbiddenError as e:
+                    logger.warning(f"User blocked bot: {e}")
                 # Удаляем историю сообщений
                 # await redis.clear_user_history(event.from_user.id)
 
@@ -160,17 +172,22 @@ class CheckSubscriptionMiddleware(BaseMiddleware):
             if redis is None:
                 raise ValueError("Redis instance must be provided in the context data.")
             
+            bot: Bot = data["bot"]
+            
             # Проверяем, подписан ли пользователь
             is_subscription_active = await db.is_subscription_active(event.from_user.id)
 
             if not is_subscription_active and not await db.is_user_trial(event.from_user.id):
                 # Если подписка закончилась И не пробный период, отправляем сообщение о продлении подписки
-        
-                await event.answer(
-                    f"Ваша подписка закончилась. \n"
-                    f"Для продолжения использования сервиса, пожалуйста, продлите подписку",
-                    reply_markup=get_payment_keyboard_markup()
-                )
+                try:
+                    await bot.send_message(
+                        chat_id=event.from_user.id,
+                        text=f"Ваша подписка закончилась. \n"
+                        f"Для продолжения использования сервиса, пожалуйста, продлите подписку",
+                        reply_markup=get_payment_keyboard_markup()
+                    )
+                except TelegramForbiddenError as e:
+                    logger.warning(f"User blocked bot: {e}")
                 # Удаляем историю сообщений
                 await redis.clear_user_history(event.from_user.id)
 
