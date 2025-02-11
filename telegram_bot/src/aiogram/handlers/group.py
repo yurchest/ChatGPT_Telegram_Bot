@@ -27,10 +27,13 @@ router = Router()
 
 router.message.filter(ChatTypeFilter(chat_type=["group", "supergroup"]))
 
+router.message.middleware(TimingMessageMiddleware())
 router.message.middleware(WaitingMiddleware())
 router.message.middleware(CheckNewUserMiddleware())
 router.message.middleware(CheckTrialPeriodMiddleware())
 router.message.middleware(CheckSubscriptionMiddleware())
+router.message.middleware(IncrementRequestsMiddleware())
+router.message.middleware(TokensMiddleware())
 
 
 
@@ -60,6 +63,8 @@ async def ask_handler(message: Message, openai: OpenAI_API):
         md=assistant_reply,
         message=message
     )
+
+    return response
 
 @router.chat_member(ChatMemberUpdatedFilter(JOIN_TRANSITION))
 async def bot_added(event: ChatMemberUpdated, bot: Bot):
