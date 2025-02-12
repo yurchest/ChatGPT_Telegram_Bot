@@ -128,7 +128,10 @@ To deploy the ChatGpt Telegram Bot service to production, follow these steps:
 
 * Start docker daemon:
   ```sh
-  sudo service docker restart
+  sudo service docker start
+  sudo systemctl enable docker.service      # Start after reboot wsl
+  sudo systemctl enable containerd.service  # Start after reboot wsl
+
   ```
 
 * If the owner is Root and you have no right, add your user to the Docker group::
