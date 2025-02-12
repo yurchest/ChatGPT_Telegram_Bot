@@ -32,4 +32,4 @@ check_env_var "$VPS_USER" "VPS_USER"
 set -e
 
 # Подключаемся по SSH
-ssh -p $VPS_SSH_PORT $VPS_USER@$VPS_SERVER_IP
+ssh -t -p $VPS_SSH_PORT $VPS_USER@$VPS_SERVER_IP 'cd ChatGPT_Telegram_Bot ; bash'
