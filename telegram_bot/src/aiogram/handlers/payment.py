@@ -1,4 +1,5 @@
 import json
+import asyncio
 
 from aiogram import Router, Bot, F
 from aiogram.enums import ParseMode
@@ -150,5 +151,5 @@ message_effect_id="5104841245755180586",
         order_info=message.successful_payment.order_info
     )
 
-    await vk_send_pixel_event(redis=redis, user_id=message.from_user.id, goal_name="payment", cost=SUBSCRIPTION_PRICE_RUB)
+    asyncio.create_task(vk_send_pixel_event(redis=redis, user_id=message.from_user.id, goal_name="payment", cost=SUBSCRIPTION_PRICE_RUB))
     
