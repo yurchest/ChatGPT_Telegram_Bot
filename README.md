@@ -538,3 +538,8 @@ sudo systemctl restart apache2
 ```
 
 Теперь ваш сайт работает через **HTTPS** 🚀
+
+
+```bash
+redis-cli -p 6380 --raw lrange history:800251880 0 -1 | python3 -c "import sys; print(sys.stdin.read().encode('utf-8').decode('unicode_escape'))"
+```

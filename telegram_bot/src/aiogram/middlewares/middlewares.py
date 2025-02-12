@@ -78,7 +78,7 @@ class CheckNewUserMiddleware(BaseMiddleware):
                     logger.warning(f"User blocked bot: {e}")
                 # await event.answer(text, parse_mode=ParseMode.MARKDOWN_V2)
 
-                await vk_send_pixel_event(redis=redis, user_id=event.from_user.id, goal_name="registered", cost=1)
+                asyncio.create_task(vk_send_pixel_event(redis=redis, user_id=event.from_user.id, goal_name="registered", cost=1))
 
                 # Добавляем нового пользователя в базу данных
                 await db.add_user(
@@ -110,7 +110,7 @@ class IncrementRequestsMiddleware(BaseMiddleware):
             
             # Если первый запрос,отправляем событие в ВК рекламу
             if await db.get_num_requests(event.from_user.id) == 0:
-                await vk_send_pixel_event(redis=redis, user_id=event.from_user.id, goal_name="first_requset", cost=20)
+                asyncio.create_task(vk_send_pixel_event(redis=redis, user_id=event.from_user.id, goal_name="first_requset", cost=20))
             # Увеличиваем счетчик запросов пользователя
             await db.increment_user_requests(event.from_user.id)
             # Обновляем дату последнего запроса

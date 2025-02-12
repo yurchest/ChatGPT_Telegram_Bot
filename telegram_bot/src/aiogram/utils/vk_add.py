@@ -10,19 +10,21 @@ from src.logger import logger
 
 async def vk_send_pixel_event(redis: Redis, user_id: int, goal_name: str, cost: int):
     """Отправляет событие (цель) в Mail.ru Pixel"""
+    try:
+        # Получает rb_clickid(clean) по user_id
+        rb_clickid = await redis.get_rb_clickid(user_id=user_id)
 
-    # Получает rb_clickid(clean) по user_id
-    rb_clickid = await redis.get_rb_clickid(user_id=user_id)
-
-    if rb_clickid:
-        # Формируем URL с параметрами
-        url = f"https://top-fwz1.mail.ru/tracker?id={VK_PIXEL_ID};e=RG%3A{cost}/{goal_name};rb_clickid={rb_clickid}"
-        
-        # Отправка GET запроса
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                logger.debug(f"(MAIN)\t\t Sent {goal_name} to vk_ads")
-                return await response.read()  # Читаем содержимое изображения
+        if rb_clickid:
+            # Формируем URL с параметрами
+            url = f"https://top-fwz1.mail.ru/tracker?id={VK_PIXEL_ID};e=RG%3A{cost}/{goal_name};rb_clickid={rb_clickid}"
+            
+            # Отправка GET запроса
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as response:
+                    logger.debug(f"(MAIN)\t\t Sent {goal_name} to vk_ads")
+                    return await response.read()  # Читаем содержимое изображения
+    except Exception as e:
+        logger.warning(f"(AD)\t\t Error send to pixel: {e}")
         
     
 
