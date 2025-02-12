@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Yurchest ChatGPT Bot</title>
+        <style>
+            body {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background: linear-gradient(135deg, #4facfe, #00f2fe);
+                font-family: "Arial", sans-serif;
+                margin: 0;
+                text-align: center;
+                color: white;
+                overflow: auto;
+            }
+            .container {
+                background: rgba(255, 255, 255, 0.2);
+                padding: 40px;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+                backdrop-filter: blur(10px);
+                max-width: 600px;
+            }
+            h1 {
+                font-size: 26px;
+                margin-bottom: 20px;
+            }
+            .btn {
+                display: inline-block;
+                justify-content: center;
+                align-items: center;
+                padding: 15px 40px;
+                font-size: 20px;
+                color: #fff;
+                background: #0088cc;
+                border: none;
+                border-radius: 50px;
+                cursor: pointer;
+                text-decoration: none;
+                transition: all 0.3s ease;
+                box-shadow: 0 4px 15px rgba(0, 136, 204, 0.3);
+                margin-top: 20px;
+            }
+            .btn:hover {
+                background: #005f99;
+                transform: translateY(-3px);
+                box-shadow: 0 6px 20px rgba(0, 136, 204, 0.4);
+            }
+            .info {
+                text-align: left;
+                font-size: 16px;
+                line-height: 1.6;
+            }
+            .block {
+                background: rgba(0, 0, 0, 0.3);
+                padding: 20px;
+                border-radius: 10px;
+                margin-top: 15px;
+            }
+        </style>
+        <script type="text/javascript">
+            var _tmr = window._tmr || (window._tmr = []);
+            _tmr.push({
+                id: "3610935",
+                type: "pageView",
+                start: new Date().getTime(),
+            });
+            (function (d, w, id) {
+                if (d.getElementById(id)) return;
+                var ts = d.createElement("script");
+                ts.type = "text/javascript";
+                ts.async = true;
+                ts.id = id;
+                ts.src = "https://top-fwz1.mail.ru/js/code.js";
+                var f = function () {
+                    var s = d.getElementsByTagName("script")[0];
+                    s.parentNode.insertBefore(ts, s);
+                };
+                if (w.opera == "[object Opera]") {
+                    d.addEventListener("DOMContentLoaded", f, false);
+                } else {
+                    f();
+                }
+            })(document, window, "tmr-code");
+        </script>
+
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                function redirectToBot() {
+                    let queryParams = window.location.search;
+                    window.location.href = "redirect.php" + queryParams;
+                }
+
+                function sendEventToVk() {
+                    if (window._tmr) {
+                        _tmr.push({
+                            type: "reachGoal",
+                            id: 3610935,
+                            goal: "click",
+                        });
+                        console.log("Отправлено событие VK");
+                    } else {
+                        console.error("Ошибка: _tmr не найден");
+                    }
+                }
+
+                let button = document.getElementById("startBotBtn");
+
+                // Находим все кнопки с id="startBotBtn" и вешаем обработчики
+                document.querySelectorAll("#startBotBtn").forEach((button) => {
+                    button.addEventListener("click", redirectToBot);
+                    button.addEventListener("click", sendEventToVk);
+                    console.log("События добавлены для кнопки");
+                });
+
+                // Автоматический редирект, если в параметрах есть rb_clickid
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has("rb_clickid")) {
+                    redirectToBot();
+                }
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🚀 Yurchest ChatGPT Bot 🤖</h1>
+            <button class="btn" id="startBotBtn">Запустить бота</button>
+            <div class="info">
+                <div class="block">
+                    <p>
+                        Хотите умного и удобного помощника прямо в Telegram?
+                        Yurchest ChatGPT Bot — ваш персональный AI-ассистент,
+                        работающий на базе OpenAI API! 💡
+                    </p>
+                </div>
+
+                <div class="block">
+                    <p><strong>⚡ Что умеет бот?</strong></p>
+                    <p>
+                        🔹 Генерация текста – отвечаем на вопросы, помогаем с
+                        написанием текстов, даем советы.<br />
+                        🖼 Анализ изображений – загружайте фото, и бот расскажет,
+                        что на нем изображено!<br />
+                        📂 Анализ файлов – загружайте документы (лекции,
+                        статьи), задавайте вопросы по содержанию!
+                    </p>
+                </div>
+                <div class="block">
+                    <p><strong>💬 Поддержка связного диалога</strong></p>
+                    <p>
+                        Бот запоминает предыдущие сообщения, поэтому ваш диалог
+                        будет логичным и последовательным!
+                    </p>
+                </div>
+                <div class="block">
+                    <p><strong>📢 Связь с разработчиками</strong></p>
+                    <p>
+                        Есть вопросы или идеи по улучшению? Пишите в официальную
+                        группу:
+                        <a
+                            href="https://t.me/yurchestChatGPT_Help"
+                            target="_blank"
+                            >@yurchestChatGPT_Help</a
+                        >
+                    </p>
+                </div>
+                <div class="block">
+                    <p><strong>💻 Проект с открытым исходным кодом!</strong></p>
+                    <p>
+                        Вы можете изучить код, предложить улучшения или просто
+                        посмотреть, как устроен бот:
+                        <a href="https://github.com" target="_blank">GitHub</a>
+                    </p>
+                </div>
+            </div>
+            <button class="btn" id="startBotBtn">Запустить бота</button>
+        </div>
+    </body>
+</html>
