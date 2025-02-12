@@ -32,4 +32,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-echo ".env загружен с $VPS_SERVER_IP"
+# Заменяем переменную ENVIRONMENT на dev
+sed -i 's/^ENVIRONMENT=.*/ENVIRONMENT=dev/' "$ENV_FILE"
+
+echo ".env загружен с $VPS_SERVER_IP и переменная ENVIRONMENT заменена на dev"
