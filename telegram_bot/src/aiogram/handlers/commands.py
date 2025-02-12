@@ -95,6 +95,8 @@ async def reset_handler(message: Message, openai: OpenAI_API):
         "Бот запоминает предыдущие сообщения, чтобы поддерживать связный диалог\\.",
         "Используйте /reset\\_conversation для сброса контекста\\.\n",
         *commands_text,
+        "Канал: [Yurchest ChatGPT](https://t.me/yurchestChatGPT)",
+        "Чат: [Yurchest ChatGPT Help](https://t.me/yurchestChatGPT_Help)\n",
         "👨‍💻 *Разработчик:* [@yurchest](tg://user?id=567804607)"
     ]) 
     await message.answer(text, parse_mode=ParseMode.MARKDOWN_V2)
