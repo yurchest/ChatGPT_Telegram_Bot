@@ -5,35 +5,42 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Yurchest ChatGPT Bot</title>
         <style>
+            /* Основные стили */
             body {
                 display: flex;
                 justify-content: center;
                 align-items: center;
-                background: linear-gradient(135deg, #4facfe, #00f2fe);
-                font-family: "Arial", sans-serif;
+                min-height: 100vh;
                 margin: 0;
-                text-align: center;
+                background: linear-gradient(135deg, #667eea, #764ba2);
+                font-family: "Arial", sans-serif;
                 color: white;
-                overflow: auto;
+                overflow-y: auto; /* Разрешаем вертикальную прокрутку */
             }
+
             .container {
-                background: rgba(255, 255, 255, 0.2);
+                background: rgba(255, 255, 255, 0.1);
                 padding: 40px;
-                border-radius: 15px;
-                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-                backdrop-filter: blur(10px);
-                max-width: 600px;
+                border-radius: 20px;
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+                backdrop-filter: blur(15px);
+                max-width: 700px;
+                width: 90%;
+                text-align: center;
+                animation: fadeIn 1.5s ease-in-out;
+                margin: 40px 0; /* Добавляем отступы сверху и снизу */
             }
+
             h1 {
-                font-size: 26px;
+                font-size: 2.5rem;
                 margin-bottom: 20px;
+                animation: slideIn 1s ease-in-out;
             }
+
             .btn {
                 display: inline-block;
-                justify-content: center;
-                align-items: center;
                 padding: 15px 40px;
-                font-size: 20px;
+                font-size: 1.2rem;
                 color: #fff;
                 background: #0088cc;
                 border: none;
@@ -42,23 +49,119 @@
                 text-decoration: none;
                 transition: all 0.3s ease;
                 box-shadow: 0 4px 15px rgba(0, 136, 204, 0.3);
-                margin-top: 20px;
+                margin: 20px 0;
+                animation: fadeIn 2s ease-in-out;
             }
+
             .btn:hover {
                 background: #005f99;
-                transform: translateY(-3px);
-                box-shadow: 0 6px 20px rgba(0, 136, 204, 0.4);
+                transform: translateY(-5px);
+                box-shadow: 0 8px 25px rgba(0, 136, 204, 0.5);
             }
+
             .info {
                 text-align: left;
-                font-size: 16px;
+                font-size: 1rem;
                 line-height: 1.6;
+                margin-top: 20px;
             }
+
             .block {
-                background: rgba(0, 0, 0, 0.3);
+                background: rgba(0, 0, 0, 0.2);
                 padding: 20px;
                 border-radius: 10px;
                 margin-top: 15px;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+
+            .block:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            }
+
+            .block a {
+                color: #4facfe;
+                text-decoration: none;
+                transition: color 0.3s ease;
+            }
+
+            .block a:hover {
+                color: #00f2fe;
+            }
+
+            /* Анимации */
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+
+            @keyframes slideIn {
+                from {
+                    transform: translateY(-50px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+
+            /* Фоновые элементы */
+            .bg-elements {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: -1;
+                overflow: hidden;
+            }
+
+            .bg-elements div {
+                position: absolute;
+                background: rgba(255, 255, 255, 0.1);
+                border-radius: 50%;
+                animation: float 10s infinite ease-in-out;
+            }
+
+            .bg-elements div:nth-child(1) {
+                width: 150px;
+                height: 150px;
+                top: 10%;
+                left: 20%;
+                animation-duration: 12s;
+            }
+
+            .bg-elements div:nth-child(2) {
+                width: 200px;
+                height: 200px;
+                top: 50%;
+                left: 70%;
+                animation-duration: 15s;
+            }
+
+            .bg-elements div:nth-child(3) {
+                width: 100px;
+                height: 100px;
+                top: 80%;
+                left: 40%;
+                animation-duration: 8s;
+            }
+
+            @keyframes float {
+                0% {
+                    transform: translateY(0) rotate(0deg);
+                }
+                50% {
+                    transform: translateY(-20px) rotate(180deg);
+                }
+                100% {
+                    transform: translateY(0) rotate(360deg);
+                }
             }
         </style>
         <script type="text/javascript">
@@ -125,13 +228,18 @@
         </script>
     </head>
     <body>
+        <div class="bg-elements">
+            <div></div>
+            <div></div>
+            <div></div>
+        </div>
         <div class="container">
             <h1>🚀 Yurchest ChatGPT Bot 🤖</h1>
             <button class="btn" id="startBotBtn">Запустить бота</button>
             <div class="info">
                 <div class="block">
                     <p>
-                        Хотите умного и удобного помощника прямо в Telegram?
+                        Хотите и удобного помощника прямо в Telegram?
                         Yurchest ChatGPT Bot — ваш персональный AI-ассистент,
                         работающий на базе OpenAI API! 💡
                     </p>
