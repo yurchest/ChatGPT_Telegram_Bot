@@ -126,6 +126,29 @@ To deploy the ChatGpt Telegram Bot service to production, follow these steps:
   sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
   ```
 
+* Start docker daemon:
+  ```sh
+  sudo service docker start
+  sudo systemctl enable docker.service      # Start after reboot wsl
+  sudo systemctl enable containerd.service  # Start after reboot wsl
+
+  ```
+
+* If the owner is Root and you have no right, add your user to the Docker group::
+  ```sh
+  sudo usermod -aG docker $USER
+  newgrp docker
+  ```
+* Restart WSL
+  ```sh
+  wsl --shutdown
+  wsl
+  sudo service docker start
+  ```
+
+
+
+
 2. **Clone Repo**
   ```sh
   git clone https://github.com/yurchest/ChatGPT_Telegram_Bot.git

@@ -1,13 +1,31 @@
 import os
 from dotenv import load_dotenv, find_dotenv
 from src.logger import logger
+import http.client
 
-
+logger.warning("--------------------------------------")
+logger.warning(f"(CONFIG)\t  Initializing ...")
 # Загружаем  .env файл
 # dotenv_path = "../.env" # TODO Закоментить Удалить на проде
 # load_dotenv(dotenv_path)
+VPS_SERVER_IP=os.getenv("VPS_SERVER_IP")
 
-ENVIRONMENT = os.getenv("ENVIRONMENT", "dev")
+# Получаем внешний IP-адрес через http.client
+conn = http.client.HTTPSConnection("ifconfig.me")
+try:
+    conn.request("GET", "/ip")
+    response = conn.getresponse()
+    if response.status == 200:
+        external_ip = response.read().decode("utf-8")
+        logger.info(f"(CONFIG)\t  HOST IP: {external_ip}")
+    else:
+        external_ip = None  # Обработка ошибки, если не удалось получить IP
+finally:
+    conn.close()
+
+# Устанавливаем значение ENVIRONMENT в dev, если внешний IP не совпадает с VPS_SERVER_IP
+ENVIRONMENT = "dev" if external_ip != VPS_SERVER_IP else os.getenv("ENVIRONMENT", "dev")
+logger.info(f"(CONFIG)\t  ENVIRONMENT set to: `{ENVIRONMENT}`")
 
 
 # Выбираем API ключ в зависимости от среды

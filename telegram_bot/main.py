@@ -63,13 +63,12 @@ async def main() -> None:
     
     await bot(DeleteWebhook(drop_pending_updates=True))
 
-    logger.info("(MAIN)\t\t Bot has started successfully")
+    logger.warning("(MAIN)\t\t Bot has started successfully")
 
     await dp.start_polling(bot)
 
 
 if __name__ == "__main__":
-    logger.warning("--------------------------------------")
     logger.warning("(MAIN)\t\t Service starting ...")
     # Start up the server to expose the metrics.
     start_http_server(8000)

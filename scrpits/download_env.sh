@@ -1,4 +1,3 @@
-#!/bin/bash
 
 # Проверка наличия переменной в .env
 check_env_var() {
@@ -10,14 +9,9 @@ check_env_var() {
 
 # Определяем корень проекта
 PROJECT_ROOT=$(git rev-parse --show-toplevel)
+
 # Путь к .env файлу
 ENV_FILE="$PROJECT_ROOT/.env"
-
-# Проверяем, существует ли файл .env
-if [ ! -f "$ENV_FILE" ]; then
-    echo "$ENV_FILE файл не найден. Завершаем выполнение."
-    exit 1
-fi
 
 # Загружаем переменные окружения из файла .env, исключая комментарии и пустые строки
 set -a  # Автоматически экспортировать все переменные
@@ -31,5 +25,14 @@ check_env_var "$VPS_USER" "VPS_USER"
 # Установим флаг для завершения при любой ошибке
 set -e
 
-# Подключаемся по SSH
-ssh -t -p $VPS_SSH_PORT $VPS_USER@$VPS_SERVER_IP 'cd ChatGPT_Telegram_Bot ; bash'
+# Копируем .env с сервера
+scp -P $VPS_SSH_PORT $VPS_USER@$VPS_SERVER_IP:ChatGPT_Telegram_Bot/.env $PROJECT_ROOT
+if [ $? -ne 0 ]; then
+    echo "Ошибка при копировании папки dashboards на сервер"
+    exit 1
+fi
+
+# Заменяем переменную ENVIRONMENT на dev
+sed -i 's/^ENVIRONMENT=.*/ENVIRONMENT=dev/' "$ENV_FILE"
+
+echo ".env загружен с $VPS_SERVER_IP и переменная ENVIRONMENT заменена на dev"

@@ -117,7 +117,7 @@ class Database:
                     language_code=language_code,
                 )
                 session.add(user)
-                logger.info("(POSTGRE)\t User added with username: %s", username)
+            logger.info(f"(POSTGRE)\t User added: {username}\t{telegram_id}", )
 
     @handle_db_errors
     async def is_user_exists(self, telegram_id: int) -> bool:

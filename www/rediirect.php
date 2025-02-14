@@ -25,8 +25,8 @@ if (isset($params['rb_clickid'])) {
     $rb_clickid = $params['rb_clickid'];
     $rb_clickid_sha256 = hash('sha256', $rb_clickid);
 
-    // Сохраняем в Redis (1 час)
-    $redis->setex("rb_clickid:$rb_clickid_sha256", 60*60, $rb_clickid);
+    // Сохраняем в Redis (8 часов)
+    $redis->setex("rb_clickid:$rb_clickid_sha256", 8*60*60, $rb_clickid);
 
     // Устанавливаем Cookie (Safari-friendly)
     setcookie('rb_clickid', $rb_clickid_sha256, time() + 86400, "/", "", false, true);
@@ -47,4 +47,3 @@ $url = is_mobile()
 header("Location: $url");
 exit();
 ?>
-

@@ -59,11 +59,14 @@ async def global_error_handler(event: ErrorEvent, bot: Bot, redis: Redis, db: Da
     # Увеличиваем метрику ошибок
     ERRORS_COUNTER.labels(error_type=str(exception.__class__.__name__)).inc()
 
-    # Уведомляем пользователя
-    if telegram_id:
-        await bot.send_message(
-            chat_id=telegram_id,
-            text=f"Произошла непредвиденная ошибка \nСвяжитесь с разработчиком (https://t.me/yurchestChatGPT_Help)\n\nError: {exception}"
-        )
+    try:
+        # Уведомляем пользователя
+        if telegram_id:
+            await bot.send_message(
+                chat_id=telegram_id,
+                text=f"Произошла непредвиденная ошибка \nСвяжитесь с разработчиком (https://t.me/yurchestChatGPT_Help)\n\nError: {exception}"
+            )
+    except Exception as e:
+        logger.Error(f"Error sending error message to user {telegram_id}: {e}")
 
     return True
