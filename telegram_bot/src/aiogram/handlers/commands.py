@@ -25,8 +25,8 @@ router.message.middleware(WaitingMiddleware())
 
 
 @router.message(CommandStart())
-async def start_handler(message: Message, command: CommandObject, redis: Redis, db: Database) -> None:
-    await message.answer("Можешь задавать интересующий тебя вопрос")
+async def start_handler(message: Message) -> None:
+    await message.answer("Можешь задавать интересующий тебя вопрос\n/help - помощь")
     
 
 @router.message(Command('reset_conversation'), ChatModeFilter(mode="usual"))

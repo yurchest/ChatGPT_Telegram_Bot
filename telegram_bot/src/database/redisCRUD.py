@@ -132,7 +132,7 @@ class Redis:
         # Получаем rb_clickid по хэшу
         rb_clickid = await self.redis.get(f"rb_clickid:{sha256}")
         if not rb_clickid:
-            logger.error(f"(Redis)\t Нет хэша rb_clickid")
+            logger.error(f"(Redis)\t Нет хэша rb_clickid для {user_id}")
             return
         # Удаляем rb_clickid по хэшу (так как больше не нужен)
         await self.redis.delete(f"rb_clickid:{sha256}")
