@@ -67,6 +67,6 @@ async def global_error_handler(event: ErrorEvent, bot: Bot, redis: Redis, db: Da
                 text=f"Произошла непредвиденная ошибка \nСвяжитесь с разработчиком (https://t.me/yurchestChatGPT_Help)\n\nError: {exception}"
             )
     except Exception as e:
-        logger.Error(f"Error sending error message to user {telegram_id}: {e}")
+        logger.error(f"Error sending error message to user {telegram_id}: {e}")
 
     return True
